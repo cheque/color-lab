@@ -40,9 +40,9 @@
   ];
 
   var AB = Solids.AB;      // a*, b* span [-AB, AB] in the cuts and the solid
-  var CUT_PX = 156;        // CSS size of a cut
-  var CUT_RES = 150;       // pixels computed per side of a cut (drawn smoothed)
-  var SOLID_PX = 420;      // CSS size of the 3-D view
+  var CUT_PX = 234;        // CSS size of a cut
+  var CUT_RES = 220;       // pixels computed per side of a cut (drawn smoothed)
+  var SOLID_PX = 630;      // CSS size of the 3-D view
 
   var state = {
     rgb: {R: 0, G: 0, B: 0},
