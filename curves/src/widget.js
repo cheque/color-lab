@@ -3,12 +3,12 @@
 //
 //  A second front end over the same core as index.html. It is not a smaller
 //  copy of the lab: the lab is an instrument for studying the curve, this is a
-//  tool for leaving with n colours. Layout, top to bottom:
+//  tool for leaving with n colors. Layout, top to bottom:
 //
 //      ┌──────┬────────────────────────────────────┐
 //      │ ◐ ◑  │  k  cyc  hue  sat  light  interval │   envelope + 6 verticals
 //      ├──────┴────────────────────────────────────┤
-//      │  colours ──────●───────────  7            │
+//      │  colors ──────●───────────  7            │
 //      │  ▓▓ ▓▓ ▓▓ ▓▓ ▓▓ ▓▓ ▓▓                     │
 //      │  [copy] [json] [gimp]      [ APPLY ]      │
 //      └───────────────────────────────────────────┘
@@ -55,8 +55,8 @@ var SHORT = {
 };
 
 var ENVELOPES = [
-  {key: 'pcircle', title: 'circle — a rounded envelope, full at the centre'},
-  {key: 'pbell',   title: 'bell — a peak at the centre, fading to the ends'}
+  {key: 'pcircle', title: 'circle — a rounded envelope, full at the center'},
+  {key: 'pbell',   title: 'bell — a peak at the center, fading to the ends'}
 ];
 
 var SWATCH_SAMPLES = 64;      // resolution of the gradient behind the interval
@@ -95,7 +95,7 @@ var CSS = [
 '.cc-toggles label{display:flex;align-items:center;gap:5px;cursor:pointer}',
 '.cc-toggles input{accent-color:var(--cc-accent);margin:0}',
 // Ten to a line, whatever the width: 1fr columns plus a square aspect keeps
-// the boxes the same size whether the palette has 3 colours or 50.
+// the boxes the same size whether the palette has 3 colors or 50.
 '.cc-swatches{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-top:0}',
 '.cc-sw{aspect-ratio:1;border:2px solid #fff;border-radius:6px}',
 '.cc-actions{display:flex;gap:6px;align-items:center;justify-content:center;margin-top:12px}',
@@ -229,12 +229,12 @@ function mountPicker(host, options) {
   top.appendChild(cols);
   root.appendChild(top);
 
-  // --- the number of colours ------------------------------------------------
+  // --- the number of colors ------------------------------------------------
 
   root.appendChild(document.createElement('hr')).className = 'cc-rule';
 
   var countRow = div('cc-count');
-  countRow.appendChild(cap('colours'));
+  countRow.appendChild(cap('colors'));
   var countSpec = paramSpec('Nsample');
   var count = makeRangePair({
     min: countSpec.min, max: countSpec.max, step: countSpec.step,
@@ -265,7 +265,7 @@ function mountPicker(host, options) {
     P.sign = on ? valOff(paramSpec('sign')) : valOn(paramSpec('sign'));
     refresh();
   });
-  evenBox.title = 'Sample at equal steps of perceived colour difference ' +
+  evenBox.title = 'Sample at equal steps of perceived color difference ' +
                   'instead of equal steps of the parameter.';
   invBox.title  = 'Reverse the direction the hue winds around the cylinder.';
   toggles.appendChild(evenBox);

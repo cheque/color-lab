@@ -2,7 +2,7 @@
    Parametric Curves in Color Space
    The original stylesheet was shared verbatim with colortheory/ and positioned
    the three panels with absolute left offsets, so the layout broke below
-   ~1250px. It is a flex row now; the colours and the dark ground are unchanged.
+   ~1250px. It is a flex row now; the colors and the dark ground are unchanged.
    ========================================================================== */
 
 :root {

@@ -2,14 +2,14 @@
 
 # Parametric Curves in Color Space
 
-**A colour gradient is a trajectory through the HSL solid.**
-Travel along a curve and the colours you pass are a gradient; stop *n* times along the way and they are a palette.
+**A color gradient is a trajectory through the HSL solid.**
+Travel along a curve and the colors you pass are a gradient; stop *n* times along the way and they are a palette.
 
 ### [**▶&nbsp; Open the lab**](https://cheque.github.io/color-curves/) &nbsp;·&nbsp; [**◆&nbsp; Palette picker**](https://cheque.github.io/color-curves/widget.html) &nbsp;·&nbsp; [**📄&nbsp; The paper**](https://archive.bridgesmathart.org/2023/bridges2023-181.html)
 
-<img src="assets/hero.png" alt="Five gradients produced by the tool, each with the nine-colour palette sampled from it" width="100%">
+<img src="assets/hero.png" alt="Five gradients produced by the tool, each with the nine-color palette sampled from it" width="100%">
 
-<sub>Five curves, and the nine colours sampled from each.</sub>
+<sub>Five curves, and the nine colors sampled from each.</sub>
 
 </div>
 
@@ -17,11 +17,11 @@ Travel along a curve and the colours you pass are a gradient; stop *n* times alo
 
 ## The idea
 
-Picking a palette usually means picking colours one at a time and hoping they agree. This tool starts somewhere else: it treats the HSL colour solid as a space you can *draw a line through*.
+Picking a palette usually means picking colors one at a time and hoping they agree. This tool starts somewhere else: it treats the HSL color solid as a space you can *draw a line through*.
 
-The HSL model is a cylinder. Hue is the angle around it, saturation the distance from the axis, lightness the height. Any curve inside that cylinder is therefore a continuous run of colour — and if the curve is smooth, the colours vary smoothly in all three attributes at once. No control points, no interpolation between chosen endpoints: the gradient falls out of the geometry.
+The HSL model is a cylinder. Hue is the angle around it, saturation the distance from the axis, lightness the height. Any curve inside that cylinder is therefore a continuous run of color — and if the curve is smooth, the colors vary smoothly in all three attributes at once. No control points, no interpolation between chosen endpoints: the gradient falls out of the geometry.
 
-Because the gradient is continuous, a palette is just a sampling of it. **Asking for twelve colours instead of seven is not a different palette — it is the same curve, sampled finer.** Palettes made this way extend, resample and interpolate.
+Because the gradient is continuous, a palette is just a sampling of it. **Asking for twelve colors instead of seven is not a different palette — it is the same curve, sampled finer.** Palettes made this way extend, resample and interpolate.
 
 ## The curve
 
@@ -54,19 +54,19 @@ One control moves continuously through each family. For **p-circle**, `k = 0` is
 
 ## From curve to palette
 
-Three things turn the curve into a set of colours you can use:
+Three things turn the curve into a set of colors you can use:
 
 **Clip it.** The full curve often has one stretch you want and some you do not. The interval `[tₐ, t_b]` selects the part to keep — drag either end, or drag the band between them to slide a fixed-width window along the curve.
 
-**Sample it.** Choose how many colours. They land at equal steps along the clipped interval.
+**Sample it.** Choose how many colors. They land at equal steps along the clipped interval.
 
-**Space them by eye.** Equal steps of `t` are not equal steps of *perceived* colour: a curve can loiter in one hue and race through another, and a palette sampled uniformly inherits that. With **perceptual spacing** on, the curve is re-parameterised by arc length measured in CIE L\*a\*b\* — so consecutive swatches differ by the same amount **to the eye**, not by the same amount of `t`. The difference is measured with CIEDE2000 by default (ΔE94 and ΔE76 are also available), and the lab reports the spread of neighbour distances so you can see the spacing improve.
+**Space them by eye.** Equal steps of `t` are not equal steps of *perceived* color: a curve can loiter in one hue and race through another, and a palette sampled uniformly inherits that. With **perceptual spacing** on, the curve is re-parameterized by arc length measured in CIE L\*a\*b\* — so consecutive swatches differ by the same amount **to the eye**, not by the same amount of `t`. The difference is measured with CIEDE2000 by default (ΔE94 and ΔE76 are also available), and the lab reports the spread of neighbor distances so you can see the spacing improve.
 
 ## The lab
 
 **[cheque.github.io/color-curves](https://cheque.github.io/color-curves/)**
 
-The full instrument. Four bands show the pipeline end to end — the whole curve, the clipped interval, the same interval after perceptual respacing, and the palette itself — with lines tying each stage to the next, so what the re-parameterisation actually did is visible rather than asserted. Beside them, the curve is drawn inside the colour cylinder in 3-D; drag to rotate it.
+The full instrument. Four bands show the pipeline end to end — the whole curve, the clipped interval, the same interval after perceptual respacing, and the palette itself — with lines tying each stage to the next, so what the re-parameterization actually did is visible rather than asserted. Beside them, the curve is drawn inside the color cylinder in 3-D; drag to rotate it.
 
 | control                |                                             | range                   |
 | ---------------------- | ------------------------------------------- | ----------------------- |
@@ -78,9 +78,9 @@ The full instrument. Four bands show the pipeline end to end — the whole curve
 | **saturation** `S`     | reach from the lightness axis               | 0 … 1                   |
 | **lightness** `L₀, L₁` | the ramp's two ends — cross them to descend | 0 … 1                   |
 | **interval** `tₐ, t_b` | the stretch that gets sampled               | −1 … 1                  |
-| **colours** `n`        | palette size                                | 2 … 50                  |
+| **colors** `n`        | palette size                                | 2 … 50                  |
 | **perceptual spacing** | equal steps to the eye                      | on / off                |
-| **metric**             | colour-difference formula                   | CIEDE2000 · ΔE94 · ΔE76 |
+| **metric**             | color-difference formula                   | CIEDE2000 · ΔE94 · ΔE76 |
 
 Every setting lives in the URL, so any palette you find is a link you can keep or send.
 
@@ -88,7 +88,7 @@ Every setting lives in the URL, so any palette you find is a link you can keep o
 
 **[cheque.github.io/color-curves/widget.html](https://cheque.github.io/color-curves/widget.html)**
 
-The same core with the controls a picker needs and nothing else: two envelope buttons, six vertical sliders, a colour count, and the palette. Embedding it takes script tags and one call — it injects its own styles, scoped to `.cc-widget`, so there is no stylesheet to remember.
+The same core with the controls a picker needs and nothing else: two envelope buttons, six vertical sliders, a color count, and the palette. Embedding it takes script tags and one call — it injects its own styles, scoped to `.cc-widget`, so there is no stylesheet to remember.
 
 ```html
 <script src="src/color.js"></script>
@@ -125,7 +125,7 @@ el.addEventListener('colorcurves:apply', e => e.detail.palette);
 
 Four buttons copy the palette to the clipboard: a **delimited list** (your choice of quote and separator), **CSS custom properties**, **JSON**, or a **GIMP `.gpl`** file. A fifth format is one entry in `FORMATS`.
 
-Every export carries a link back to the curve that produced it, because a list of hex codes is a dead end while the same list with its curve can be reopened, resampled to a different number of colours, or nudged:
+Every export carries a link back to the curve that produced it, because a list of hex codes is a dead end while the same list with its curve can be reopened, resampled to a different number of colors, or nudged:
 
 ```
 GIMP Palette
@@ -155,9 +155,9 @@ index.html      the lab
 widget.html     the palette picker, and its embedding guide
 styles.css
 
-src/color.js       colour conversions: HSL, sRGB, XYZ, CIE L*a*b*, ΔE76/94/2000
+src/color.js       color conversions: HSL, sRGB, XYZ, CIE L*a*b*, ΔE76/94/2000
 src/curve.js       the shape registry and the curve model
-src/reparam.js     perceptual re-parameterisation by arc length
+src/reparam.js     perceptual re-parameterization by arc length
 src/palette.js     sampling, evenness, and the export formats
 src/params.js      one schema: defaults, ranges, controls, URL state
 src/rangepair.js   the two-thumb slider, horizontal or vertical

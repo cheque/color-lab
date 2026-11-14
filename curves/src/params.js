@@ -91,7 +91,7 @@ var PARAM_SPECS = [
   {
     key: 'perceptual', group: 'Palette', label: 'Perceptual spacing', type: 'check', def: true,
     help: 'Sample at equal steps of perceptual arc length instead of equal steps of t, ' +
-          'so neighbouring swatches differ by the same amount to the eye.'
+          'so neighboring swatches differ by the same amount to the eye.'
   },
   {
     key: 'metric', group: 'Palette', label: 'Metric', type: 'select', def: 'de2000',
@@ -104,7 +104,7 @@ var PARAM_SPECS = [
       return (typeof METRIC_ORDER === 'undefined') ? []
         : METRIC_ORDER.map(function (k) { return {value: k, label: METRICS[k].label}; });
     },
-    help: 'Colour-difference formula used to measure arc length.'
+    help: 'Color-difference formula used to measure arc length.'
   },
   {
     key: 'reverse', group: 'Palette', label: 'Reverse the curve', type: 'check', def: false,
@@ -119,7 +119,7 @@ var PARAM_SPECS = [
   {
     key: 'showPoints', group: 'View', label: 'Show sample points', type: 'check', def: true,
     view: true,
-    help: 'Draw the dots marking the sampled colours, both on the 3-D curve and ' +
+    help: 'Draw the dots marking the sampled colors, both on the 3-D curve and ' +
           'on the re-parameterized strip.'
   },
   {
@@ -190,7 +190,7 @@ function paramGroups() {
 }
 
 // Coerce a raw value (string from an input, or from a URL) to the spec's type,
-// and clamp it into range. Centralising this is what stops NaN reaching the
+// and clamp it into range. Centralizing this is what stops NaN reaching the
 // curve and coming back out as "#NANNANNAN".
 function coerceParam(spec, raw) {
   switch (spec.type) {

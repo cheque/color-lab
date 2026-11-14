@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below, and the paper it builds on."
+title: "Color Lab: instruments for color as geometry"
+type: software
+license: MIT
+repository-code: "https://github.com/cheque/color-lab"
+url: "https://cheque.github.io/color-lab/"
+authors:
+  - family-names: "Soto Sánchez"
+    given-names: "José Ezequiel"
+keywords: [color, color spaces, HSL, CIELAB, color palettes, parametric curves, perceptual uniformity, mathematical art]
+# doi: filled in after the first Zenodo release
+references:
+  - type: conference-paper
+    authors:
+      - family-names: "Soto Sánchez"
+        given-names: "José Ezequiel"
+    title: "Parametric Curves in Color Space"
+    collection-title: "Proceedings of Bridges 2023: Mathematics, Art, Music, Architecture, Culture"
+    year: 2023
+    url: "https://archive.bridgesmathart.org/2023/bridges2023-181.html"

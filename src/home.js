@@ -76,7 +76,7 @@
   }
 
   // --------------------------------------------------------------------------
-  //  1 · Colour models: the HSL disc beside the a*b* plane, gamut-clipped
+  //  1 · Color models: the HSL disc beside the a*b* plane, gamut-clipped
   // --------------------------------------------------------------------------
   function paintTheory(g) {
     var side = Math.min(g.w * 0.42, g.h * 0.78);
@@ -95,7 +95,7 @@
       return inGamut(c) ? rgbClip(c) : null;
     });
 
-    // The same colour marked in both: where one model puts it, the other does.
+    // The same color marked in both: where one model puts it, the other does.
     var mark = {R: 214, G: 64, B: 120};
     var hsl = rgb2hsl(mark.R, mark.G, mark.B);
     var lab = rgb2cielab(mark.R, mark.G, mark.B, D65);
@@ -147,7 +147,7 @@
 
   // Median cut, one split at a time: the box with the largest spread along its
   // widest channel is cut at its median. Every palette is therefore the
-  // previous one with one colour replaced by two — a genuine pyramid.
+  // previous one with one color replaced by two — a genuine pyramid.
   function medianCutPyramid(px, levels) {
     function boxOf(list) {
       var lo = [255, 255, 255], hi = [0, 0, 0], sum = [0, 0, 0];
@@ -202,7 +202,7 @@
   }
 
   // --------------------------------------------------------------------------
-  //  3 · Palette analysis: colours in the HSL disc and paths that join them
+  //  3 · Palette analysis: colors in the HSL disc and paths that join them
   // --------------------------------------------------------------------------
   function paintAnalysis(g) {
     var ctx = g.ctx;
@@ -284,7 +284,7 @@
       return {x: c.x + rho * (s * u.x + t * v.x), y: c.y + rho * (s * u.y + t * v.y),
               z: c.z + rho * (s * u.z + t * v.z)};
     }
-    function colourAt(p) {
+    function colorAt(p) {
       var H = Math.atan2(p.y, p.x) / (2 * Math.PI);
       return hsl2rgb({H: H - Math.floor(H), S: Math.min(1, Math.hypot(p.x, p.y)),
                       L: Math.max(0, Math.min(1, (p.z + 1) / 2))});
@@ -293,7 +293,7 @@
     // The big circle: what the screen will show.
     var R = g.h * 0.4, cx = g.w * 0.66, cy = g.h / 2;
     pixels(g, cx - R, cy - R, 2 * R, 2 * R, function (s, t) {
-      return (s * s + t * t > 1) ? null : colourAt(at(s, t));
+      return (s * s + t * t > 1) ? null : colorAt(at(s, t));
     });
     ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI);
     ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.stroke();

@@ -25,9 +25,9 @@ var CURVE_SAMPLES    = 2000;              // polyline segments in the 3-D plot
 //   1 full     the whole curve, t in [-1,1]
 //   2 clip     cropped to [ta,tb], still uniform in t
 //   3 spaced   the same crop after the perceptual re-parameterization
-//   4 palette  the n colours actually sampled from it
+//   4 palette  the n colors actually sampled from it
 // Separating 2 from 3 is what makes the re-parameterization legible: the two
-// strips hold the same colours, only redistributed.
+// strips hold the same colors, only redistributed.
 var BAR_W  = 64;
 var BAR_X  = [0, 112, 224, 336];          // pitch 112 = 64 bar + 48 gutter
 var BAR_FULL = 0, BAR_CLIP = 1, BAR_SPACED = 2, BAR_PAL = 3;
@@ -41,7 +41,7 @@ var P = paramsFromQuery(window.location.search, defaultParams());
 var camera = {th: 0.375, ph: 0.05};       // azimuth / elevation, in TURNS
 
 // Cached model output. `dirty` guards the expensive part: dragging the 3-D view
-// only moves the camera, so the curve's colours and cylinder coordinates do not
+// only moves the camera, so the curve's colors and cylinder coordinates do not
 // need recomputing. The old code re-evaluated 5000 hsl2rgb conversions on every
 // single mousemove event.
 var model = {dirty: true, colors: null, points: null, palette: null};
@@ -59,7 +59,7 @@ canvasG.height = GRADIENT_H;
 ctxG.transform(1, 0, 0, -1, 0, GRADIENT_H);   // y up
 
 var canvasC = document.getElementById('curve');
-var ctxC    = fitCanvas(canvasC, CURVE_W);   // origin centred, y up, unit sphere
+var ctxC    = fitCanvas(canvasC, CURVE_W);   // origin centered, y up, unit sphere
 
 // ----------------------------------------------------------------------------
 //  Control construction (driven entirely by PARAM_SPECS)
@@ -252,7 +252,7 @@ function syncControls() {
     if (h.check)  { h.check.checked = isOn(spec, v); }
     if (h.text)   { if (document.activeElement !== h.text) { h.text.value = v; } }
 
-    // Grey out controls whose prerequisite is off (e.g. the metric picker when
+    // Gray out controls whose prerequisite is off (e.g. the metric picker when
     // perceptual spacing is disabled).
     if (spec.dependsOn) {
       var parts  = spec.dependsOn.split(':');
@@ -305,7 +305,7 @@ function rebuild(curve) {
     spaced[i] = toHex(hsl2rgb(curve(map(u))));
   }
 
-  // The 3-D polyline: colours and cylinder coordinates, camera-independent.
+  // The 3-D polyline: colors and cylinder coordinates, camera-independent.
   var point  = makeCurvePoint(P);
   var colors = new Array(CURVE_SAMPLES + 1);
   var points = new Array(CURVE_SAMPLES + 1);
@@ -400,7 +400,7 @@ function drawGradient() {
   // The sample points themselves, marked on the re-parameterized strip — the
   // same points as the dots on the 3-D curve. They are evenly spaced *here* by
   // construction, in both modes: this strip is the one sampling is uniform in.
-  // What perceptual spacing changes is which colours end up at those heights,
+  // What perceptual spacing changes is which colors end up at those heights,
   // which is what the tie-lines to the left show.
   if (P.showPoints) {
     var dotR = Math.min(5, Math.max(2, band / 3));
@@ -438,7 +438,7 @@ function drawGradient() {
 function drawCurve(opts) {
   var cleared = !P.accumulate || (opts && opts.clear);
   // The default frame fits the unit sphere. The cylinder's rims project up to
-  // sqrt(2) from the centre (cos ph + sin ph at ph = 1/8 turn), so showing it
+  // sqrt(2) from the center (cos ph + sin ph at ph = 1/8 turn), so showing it
   // zooms out by that factor — a fixed scale, so dragging never makes it pulse.
   var s = (CURVE_W / 2) * (P.showCylinder ? 0.875 / Math.SQRT2 : 0.875);
   ctxC.setTransform(s, 0, 0, -s, CURVE_W / 2, CURVE_W / 2);
@@ -446,7 +446,7 @@ function drawCurve(opts) {
 
   var basis = cameraBasis(camera);
 
-  // Behind the curve, so it never covers a colour. Only on a fresh canvas:
+  // Behind the curve, so it never covers a color. Only on a fresh canvas:
   // with "Keep previous curves" on, its translucent lines would otherwise
   // pile up and brighten on every redraw.
   if (P.showCylinder && cleared) { drawCylinder(ctxC, basis); }
@@ -486,7 +486,7 @@ function paletteText(format) {
 
 // The palette used to be printed into a <pre> as well as copied. Two renderings
 // of the same list is one too many — the swatches show it and the buttons hand
-// it over — so the box is gone and this only paints the colours.
+// it over — so the box is gone and this only paints the colors.
 function writePalette() {
   var sw = outputSwatches();
   var strip = document.getElementById('swatches');
@@ -500,8 +500,8 @@ function writePalette() {
   var cv = paletteEvenness(sw);
   document.getElementById('evenness').textContent =
     P.perceptual
-      ? 'perceptually spaced — neighbour ΔE spread ' + (100 * cv).toFixed(1) + '%'
-      : 'uniform in t — neighbour ΔE spread ' + (100 * cv).toFixed(1) + '%';
+      ? 'perceptually spaced — neighbor ΔE spread ' + (100 * cv).toFixed(1) + '%'
+      : 'uniform in t — neighbor ΔE spread ' + (100 * cv).toFixed(1) + '%';
 }
 
 function updatePermalink() {

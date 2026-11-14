@@ -1,5 +1,5 @@
 // ============================================================================
-//  theory/src/app.js — the colour-model explorer
+//  theory/src/app.js — the color-model explorer
 //
 //  A rewrite of chequesoto.info/colortheory (kept verbatim in
 //  legacy/colortheory/) on the shared, tested lib/color.js. What it keeps: the
@@ -17,13 +17,13 @@
 //      than a round-trip distance under 1.2;
 //    - XYZ and L*C*h°, hidden in the published page, are shown;
 //    - the palette exports (list, CSS, JSON, GIMP), shows the CIEDE2000
-//      difference between neighbours, and lives in the permalink;
+//      difference between neighbors, and lives in the permalink;
 //    - the legacy DeltaE2000 (which used ^ as a power and undefined weights)
 //      is replaced by lib/color.js deltaE2000.
 //
 //  State has one source of truth per edit: the model being edited keeps its
-//  exact values (so a grey keeps its hue while you drag through it) and the
-//  others are derived from the resulting sRGB colour.
+//  exact values (so a gray keeps its hue while you drag through it) and the
+//  others are derived from the resulting sRGB color.
 //
 //  Requires: lib/color.js, lib/palette.js
 // ============================================================================
@@ -60,13 +60,13 @@
   function $(id) { return document.getElementById(id); }
 
   // --------------------------------------------------------------------------
-  //  Setting the colour from each model
+  //  Setting the color from each model
   // --------------------------------------------------------------------------
 
   function fromRGB(c) {
     state.rgb = {R: c.R, G: c.G, B: c.B};
     var h = rgb2hsl(c.R, c.G, c.B);
-    // A grey has no hue and black/white no saturation either; keep the ones we
+    // A gray has no hue and black/white no saturation either; keep the ones we
     // had, so the pointer does not jump to red when you drag through the axis.
     if (h.S === 0) { h.H = state.hsl.H; }
     if (h.L === 0 || h.L === 1) { h.S = state.hsl.S; }
@@ -85,7 +85,7 @@
     changed();
   }
 
-  // Pull an out-of-gamut L*a*b* colour to the sRGB boundary by scaling its
+  // Pull an out-of-gamut L*a*b* color to the sRGB boundary by scaling its
   // chroma down at constant L* and hue. The neutral axis is always inside, so
   // bisection on the scale factor converges.
   function mapToGamut(lab) {
@@ -218,7 +218,7 @@
     });
     var g = ctx.lab;
     g.clearRect(0, 0, cv.lab.width, cv.lab.height);
-    // The axes, under the colours: they show through where the gamut ends.
+    // The axes, under the colors: they show through where the gamut ends.
     g.strokeStyle = 'rgba(255,255,255,0.25)';
     g.lineWidth = DPR;
     g.beginPath();
@@ -395,7 +395,7 @@
       if (i > 0) {
         var a = hex2rgb(state.palette[i - 1]), b = hex2rgb(hex);
         var de = deltaE2000(rgb2cielab(a.R, a.G, a.B, D65), rgb2cielab(b.R, b.G, b.B, D65));
-        root.appendChild(el('span', {class: 'de', title: 'CIEDE2000 between neighbours', text: de.toFixed(1)}));
+        root.appendChild(el('span', {class: 'de', title: 'CIEDE2000 between neighbors', text: de.toFixed(1)}));
       }
       var x = el('button', {type: 'button', class: 'x', 'aria-label': 'Remove ' + hex, text: '×'});
       var chip = el('div', {class: 'chip', draggable: 'true', title: 'Click to load, drag to reorder'},
@@ -509,12 +509,12 @@
     if (state.gamut) { fromLab(state.lab); } else { changed(); }
   });
 
-  function randomColour() {
+  function randomColor() {
     return {R: Math.floor(256 * Math.random()), G: Math.floor(256 * Math.random()),
             B: Math.floor(256 * Math.random())};
   }
 
-  $('random').addEventListener('click', function () { fromRGB(randomColour()); });
+  $('random').addEventListener('click', function () { fromRGB(randomColor()); });
   $('sample').addEventListener('click', function () {
     state.palette.push(toHex(state.rgb));
     renderPalette(); updatePermalink();
@@ -522,6 +522,6 @@
   $('permalink').addEventListener('click', function () { copy(location.href, 'Link'); });
 
   var start = readQuery();
-  fromRGB(start || randomColour());
+  fromRGB(start || randomColor());
   renderPalette();
 })();

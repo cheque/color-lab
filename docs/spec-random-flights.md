@@ -4,24 +4,24 @@
 
 ## What it does
 
-An arrow flies through a colour solid. Perpendicular to it, a disc of radius ρ travels along. The colours
+An arrow flies through a color solid. Perpendicular to it, a disc of radius ρ travels along. The colors
 the disc cuts are drawn, large, as a **circle on the screen**: the main view. A **miniature** in one
 corner shows the solid as a wireframe, the arrow, its disc and the path ahead and behind, so it is always
-clear where the colours come from.
+clear where the colors come from.
 
 ## Trajectory
 
 - A chain of cubic Béziers between **random points** inside the solid, joined C¹ (each new segment's first
   handle mirrors the previous segment's last), generated ahead of the arrow in real time so the flight
   never ends.
-- Constant **speed** along the curve (re-parameterised by arc length, as in `lib/reparam.js`), adjustable.
-- **Frame:** the tangent is the arrow. The disc's in-plane axes use a rotation-minimising frame (double
+- Constant **speed** along the curve (re-parameterized by arc length, as in `lib/reparam.js`), adjustable.
+- **Frame:** the tangent is the arrow. The disc's in-plane axes use a rotation-minimizing frame (double
   reflection, Wang et al. 2008), so the circle on the screen does not spin on its own.
 - **Steering:** the arrow keys turn the heading (yaw and pitch), `+`/`−` change speed, space pauses. When
   the user steers, the random generator takes over again from wherever the arrow is.
 - **Editing:** drag the upcoming control points in the miniature. Pause to rotate the miniature.
 - **Walls:** random points are drawn inside the solid. If the arrow is about to leave it, the next segment
-  bends back in. Disc points that fall outside are shown as the page's grey (masked), or clamped (option).
+  bends back in. Disc points that fall outside are shown as the page's gray (masked), or clamped (option).
 
 ## Spaces (selector)
 
@@ -43,15 +43,15 @@ recommended from the start. The miniature uses `lib/scene.js` (orthographic came
 
 ## Output
 
-A ring palette: *n* colours sampled on the rim of the disc, live, with color-curves' export buttons.
+A ring palette: *n* colors sampled on the rim of the disc, live, with color-curves' export buttons.
 Freeze frame (PNG). Record a flight as the list of Bézier control points (JSON permalink) so it can be
 replayed exactly. Later, perhaps, a video export.
 
 ## Questions for the owner
 
 1. Disc of a fixed radius, or one that breathes (ρ varying along the path, randomly or by key)?
-2. Outside the solid: mask with grey, clamp to the boundary, or reflect the trajectory so the disc never leaves?
-3. Is the circle on screen just the disc, or also a strip that records the disc's centre colour over time
+2. Outside the solid: mask with gray, clamp to the boundary, or reflect the trajectory so the disc never leaves?
+3. Is the circle on screen just the disc, or also a strip that records the disc's center color over time
    (a gradient of the flight)?
 4. WebGL from the start (smooth, full resolution) or canvas first (simpler, like the other instruments)?
 5. Should the flight be reproducible from a seed (same random path every time for a given number)?

@@ -1,7 +1,7 @@
 // ============================================================================
 //  curve.js — the parametric curve model
 //
-//  A curve is a map  t in [-1,1]  ->  HSL point in the colour cylinder:
+//  A curve is a map  t in [-1,1]  ->  HSL point in the color cylinder:
 //
 //      H(t) = frac( sign * phase(t) / 2 )          hue, in turns
 //      S(t) = S * env(t)                           saturation
@@ -74,7 +74,7 @@ var DEFAULT_SHAPE = 'pbell';
 // The phase, in half-turns. ORIENTATION IS IN WHOLE TURNS — t0 = 1 is one
 // complete revolution of the hue, and of the curve about the lightness axis —
 // so it enters here doubled. Everything needing the phase goes through this one
-// function, which is what keeps the drawn point and its own colour agreeing.
+// function, which is what keeps the drawn point and its own color agreeing.
 function phaseOf(p, t) { return p.N * t + 2 * p.t0; }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ function shapeOf(p) { return SHAPES[p.shape] || SHAPES[DEFAULT_SHAPE]; }
 // collapses to S itself, which is why no trigonometry survives in here: the
 // curve's distance from the lightness axis is S*env(t) and nothing else. The
 // `hueMode` switch went with it. It existed because on an ellipse the ANGLE of
-// a point and the PHASE that gives it its colour disagree when A != B, so you
+// a point and the PHASE that gives it its color disagree when A != B, so you
 // had to choose which one the hue followed. On a circle they are equal, and
 // the choice is not a choice any more. (REVIEW.md section 4 asked you to make
 // that call; joining the two scales answers it.)
@@ -114,15 +114,15 @@ function makeCurve(p) {
   };
 }
 
-// Position of the curve inside the unit colour cylinder, for the 3-D plot.
+// Position of the curve inside the unit color cylinder, for the 3-D plot.
 // Returns t -> {x,y,z}, with z the lightness mapped to [-1,1].
 //
-// This is a cylindrical plot of the colour itself: the radius IS the
+// This is a cylindrical plot of the color itself: the radius IS the
 // saturation S*env(t), the angle IS the hue, and the height IS the lightness.
-// The old version had a caveat here — the radius agreed with the colour but
+// The old version had a caveat here — the radius agreed with the color but
 // the angle did not, because the point sat at the ellipse angle while its
-// colour came from the phase. One saturation removes the ellipse, and with it
-// the discrepancy: every point is now drawn exactly where its own colour says.
+// color came from the phase. One saturation removes the ellipse, and with it
+// the discrepancy: every point is now drawn exactly where its own color says.
 function makeCurvePoint(p) {
   var env = shapeOf(p).env;
 

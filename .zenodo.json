@@ -1,0 +1,12 @@
+{
+  "title": "Color Lab: instruments for color as geometry",
+  "description": "Interactive web instruments that treat color as a space: parametric curves in the HSL cylinder with perceptually even palettes, a color-model explorer (sRGB, XYZ, CIELAB, LCh, HSL) with plane cuts of the HSL and CIELAB solids, and, in development, palettes sampled from photographs, palette interpolation and random flights through color solids. Live at https://cheque.github.io/color-lab/",
+  "upload_type": "software",
+  "license": "MIT",
+  "creators": [{"name": "Soto Sánchez, José Ezequiel"}],
+  "keywords": ["color", "color spaces", "HSL", "CIELAB", "color palettes", "parametric curves", "mathematical art"],
+  "related_identifiers": [
+    {"identifier": "https://cheque.github.io/color-lab/", "relation": "isDocumentedBy", "resource_type": "other"},
+    {"identifier": "https://archive.bridgesmathart.org/2023/bridges2023-181.html", "relation": "isSupplementTo", "resource_type": "publication-article"}
+  ]
+}

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Colour Models — Color Lab</title>
+  <title>Color Models — Color Lab</title>
   <link rel="icon" href="https://cheque.github.io/assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../lib/applet.css">
   <link rel="stylesheet" href="theory.css">
@@ -14,13 +14,13 @@
 
   <!-- ---------------- controls and readouts ---------------- -->
   <section class="panel panel-controls">
-    <h2>Colour Models</h2>
+    <h2>Color Models</h2>
     <a href="https://cheque.github.io/"><p class="caption">Cheque Soto</p></a>
     <p class="links">[<a href="../index.html">Color Lab</a> &middot;
       <a href="https://github.com/cheque/color-lab" target="_blank" rel="noopener">github</a>]</p>
 
     <div class="current">
-      <div id="swatch" class="big-swatch" aria-label="Selected colour"></div>
+      <div id="swatch" class="big-swatch" aria-label="Selected color"></div>
       <div class="current-side">
         <input type="text" id="hex" class="hex" spellcheck="false" maxlength="7" aria-label="Hex code">
         <p id="gamutNote" class="caption warn" hidden>clipped to the sRGB gamut</p>
@@ -37,12 +37,12 @@
       <div class="row">
         <select id="ref" aria-label="Tristimulus reference"></select>
       </div>
-      <p class="caption left">10° observer (CIE 1964). The XYZ of an sRGB colour is fixed by sRGB's own
-        D65 white; the reference only changes how L*a*b* normalises it, with no chromatic adaptation.</p>
+      <p class="caption left">10° observer (CIE 1964). The XYZ of an sRGB color is fixed by sRGB's own
+        D65 white; the reference only changes how L*a*b* normalizes it, with no chromatic adaptation.</p>
     </fieldset>
 
     <fieldset class="group">
-      <legend>The same colour, in every model</legend>
+      <legend>The same color, in every model</legend>
       <table class="readout" id="readout"></table>
       <p class="caption left">HSL, L*a*b* and L*C*h° are editable. Hue in HSL is a turn (0–1), as in the curves
         instrument; h° in L*C*h° is in degrees.</p>
@@ -50,7 +50,7 @@
 
     <div class="actions">
       <button type="button" id="random">Random</button>
-      <button type="button" id="sample">Sample this colour</button>
+      <button type="button" id="sample">Sample this color</button>
       <button type="button" id="permalink">Copy link</button>
     </div>
   </section>
@@ -82,7 +82,7 @@
     <fieldset class="group">
       <legend>Palette</legend>
       <div id="palette" class="palette-strip" aria-live="polite"></div>
-      <p id="paletteHint" class="caption left">Press <strong>Sample this colour</strong> to collect it here.
+      <p id="paletteHint" class="caption left">Press <strong>Sample this color</strong> to collect it here.
         Drag swatches to reorder, click one to load it, × to remove it. The number between two swatches is their
         CIEDE2000 difference.</p>
       <div class="actions" id="exportButtons"></div>

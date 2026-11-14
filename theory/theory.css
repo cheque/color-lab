@@ -1,4 +1,4 @@
-/* theory.css — layout of the colour-model explorer. Tokens and controls come from lib/applet.css
+/* theory.css — layout of the color-model explorer. Tokens and controls come from lib/applet.css
    (color-curves' stylesheet), so this file only places things. */
 
 .panel-controls { width: 340px; flex: 0 0 auto; }
@@ -9,7 +9,7 @@
 .caption.warn { color: #ffd166; margin: 4px 0 0; text-align: left; }
 .row.center   { justify-content: center; }
 
-/* the selected colour */
+/* the selected color */
 .current { display: flex; gap: 12px; align-items: center; margin: 0 0 12px; }
 .big-swatch {
   flex: 0 0 96px; height: 64px;
