@@ -2,30 +2,27 @@
 //  theory/src/app.js — the color-model explorer
 //
 //  A rewrite of chequesoto.info/colortheory (kept verbatim in
-//  legacy/colortheory/) on the shared, tested lib/color.js. What it keeps: the
-//  sRGB sliders and hex code, the tristimulus reference, the (H,S) disc and
-//  the (a*,b*) plane each with its lightness profile, the sRGB-gamut
-//  restriction and the palette you collect by sampling. What changed:
+//  legacy/colortheory/) on the shared, tested lib/color.js.
 //
-//    - every model is editable, not only sRGB and the HSL disc: type into the
-//      HSL, L*a*b* or L*C*h° fields, type a hex, or drag in either plane or
-//      either lightness bar;
-//    - the a*b* plane is now an input too, and with the gamut restriction on
-//      a pick outside sRGB is pulled to the gamut boundary along its own
-//      chroma (same L*, same hue) instead of being clipped channel by channel;
-//    - the gamut test is exact (unclipped sRGB, lib/color.js inGamut) rather
-//      than a round-trip distance under 1.2;
-//    - XYZ and L*C*h°, hidden in the published page, are shown;
-//    - the palette exports (list, CSS, JSON, GIMP), shows the CIEDE2000
-//      difference between neighbors, and lives in the permalink;
-//    - the legacy DeltaE2000 (which used ^ as a power and undefined weights)
-//      is replaced by lib/color.js deltaE2000.
+//  One color, every model at once:
+//    - numbers: sRGB, hex, XYZ, HSL, L*a*b*, L*C*h°, all but XYZ editable;
+//    - six plane cuts through the current color, each a drag surface: HSL at
+//      constant L, H and S; L*a*b* at constant L*, a* and b*;
+//    - one solid in 3-D (the HSL cylinder or the sRGB gamut in L*a*b*), drawn
+//      translucent, with any of the six cuts: flat in their own space, carried
+//      over (and curved) in the other;
+//    - a palette collected by sampling, with CIEDE2000 between neighbors.
 //
-//  State has one source of truth per edit: the model being edited keeps its
-//  exact values (so a gray keeps its hue while you drag through it) and the
-//  others are derived from the resulting sRGB color.
+//  Every cut is one row of the CUTS table below. The 2-D view, the 3-D mesh,
+//  the marker and the drag all read the same row, so adding a cut is adding
+//  a row.
 //
-//  Requires: lib/color.js, lib/palette.js
+//  The model being edited keeps its exact values (a gray keeps its hue while
+//  you drag through it) and the others are derived from the resulting color.
+//  While you drag in a cut, its fixed coordinate is pinned to the value it had
+//  when you pressed, so the plane under the pointer does not move.
+//
+//  Requires: lib/color.js, lib/scene.js, lib/palette.js, theory/src/solids.js
 // ============================================================================
 
 (function () {
@@ -42,9 +39,10 @@
     ['F12', 'F12 · Ultralume 30, Philips TL83']
   ];
 
-  var PLANE = 300;     // CSS px, both planes
-  var BAR_W = 36;      // CSS px, both lightness bars
-  var AB = 110;        // the a*b* plane spans [-AB, AB] on both axes
+  var AB = Solids.AB;      // a*, b* span [-AB, AB] in the cuts and the solid
+  var CUT_PX = 156;        // CSS size of a cut
+  var CUT_RES = 150;       // pixels computed per side of a cut (drawn smoothed)
+  var SOLID_PX = 420;      // CSS size of the 3-D view
 
   var state = {
     rgb: {R: 0, G: 0, B: 0},
@@ -52,12 +50,111 @@
     lab: {L: 0, a: 0, b: 0},
     ref: 'D65',
     gamut: true,
-    clipped: false,      // the requested L*a*b* was outside sRGB and had to be clipped
-    palette: []          // hex strings, in the order shown
+    clipped: false,                    // the requested L*a*b* was outside sRGB
+    palette: [],                       // hex strings, in order
+    view: 'hsl',                       // the solid shown in 3-D
+    opacity: 0.14,
+    show: {hslL: true, labL: true}     // the cuts shown in 3-D
   };
+  var camera = {th: 0.38, ph: 0.09};
+  var anchors = {};                    // cut id -> pinned fixed value while dragging
 
   function refWhite() { return tristimulus[state.ref]; }
   function $(id) { return document.getElementById(id); }
+  function wrap(h) { return h - Math.floor(h); }
+  function fmt(v, d) { return (+v).toFixed(d); }
+
+  // --------------------------------------------------------------------------
+  //  The six cuts
+  //
+  //  current(state)   the cut's fixed coordinate for the current color
+  //  sample(u, v, k)  the cut's point at 2-D position u, v in [0,1] (v up),
+  //                   for fixed value k: {hsl: …} or {lab: …}, or null outside
+  //  sample3d(s,t,k)  the same, on the grid used for the 3-D mesh (the disc is
+  //                   gridded in polar coordinates so its rim is round)
+  //  mark(state, k)   where the current color sits, as {u, v}
+  //  pick(u, v, k)    set the color from a pointer position
+  // --------------------------------------------------------------------------
+
+  var CUTS = [
+    {
+      id: 'hslL', space: 'hsl', name: 'L', axes: 'hue around · S outward',
+      current: function () { return state.hsl.L; },
+      label: function (k) { return 'L = ' + fmt(k, 3); },
+      sample: function (u, v, k) {
+        var x = 2 * u - 1, y = 2 * v - 1, r = Math.hypot(x, y);
+        return r > 1 ? null : {hsl: {H: wrap(Math.atan2(y, x) / (2 * Math.PI)), S: r, L: k}};
+      },
+      sample3d: function (s, t, k) { return {hsl: {H: t, S: s, L: k}}; },
+      mark: function () {
+        var a = 2 * Math.PI * state.hsl.H;
+        return {u: (1 + state.hsl.S * Math.cos(a)) / 2, v: (1 + state.hsl.S * Math.sin(a)) / 2};
+      },
+      pick: function (u, v, k) {
+        var x = 2 * u - 1, y = 2 * v - 1;
+        fromHSL({H: Math.atan2(y, x) / (2 * Math.PI), S: Math.min(1, Math.hypot(x, y)), L: k});
+      }
+    },
+    {
+      // The plane through the axis at hue H: hue H to the right, its
+      // complement H + ½ to the left, lightness up.
+      id: 'hslH', space: 'hsl', name: 'H', axes: '← H+½ · S · H → · L ↑',
+      current: function () { return state.hsl.H; },
+      label: function (k) { return 'H = ' + fmt(k, 3) + ' | ' + fmt(wrap(k + 0.5), 3); },
+      sample: function (u, v, k) {
+        var s = 2 * u - 1;
+        return {hsl: {H: s >= 0 ? k : wrap(k + 0.5), S: Math.abs(s), L: v}};
+      },
+      sample3d: function (s, t, k) { return this.sample(s, t, k); },
+      mark: function (k) {
+        var same = Math.abs(wrap(state.hsl.H - k + 0.5) - 0.5) < 0.25;
+        return {u: (1 + (same ? 1 : -1) * state.hsl.S) / 2, v: state.hsl.L};
+      },
+      pick: function (u, v, k) {
+        var s = 2 * u - 1;
+        fromHSL({H: s >= 0 ? k : k + 0.5, S: Math.min(1, Math.abs(s)), L: v});
+      }
+    },
+    {
+      // The cylinder of radius S, unrolled: hue across, lightness up.
+      id: 'hslS', space: 'hsl', name: 'S', axes: 'H → · L ↑ (unrolled)',
+      current: function () { return state.hsl.S; },
+      label: function (k) { return 'S = ' + fmt(k, 3); },
+      sample: function (u, v, k) { return {hsl: {H: u, S: k, L: v}}; },
+      sample3d: function (s, t, k) { return this.sample(s, t, k); },
+      mark: function () { return {u: state.hsl.H, v: state.hsl.L}; },
+      pick: function (u, v, k) { fromHSL({H: u, S: k, L: v}); }
+    },
+    {
+      id: 'labL', space: 'lab', name: 'L*', axes: 'a* → · b* ↑',
+      current: function () { return state.lab.L; },
+      label: function (k) { return 'L* = ' + fmt(k, 1); },
+      sample: function (u, v, k) { return {lab: {L: k, a: AB * (2 * u - 1), b: AB * (2 * v - 1)}}; },
+      sample3d: function (s, t, k) { return this.sample(s, t, k); },
+      mark: function () { return {u: (1 + state.lab.a / AB) / 2, v: (1 + state.lab.b / AB) / 2}; },
+      pick: function (u, v, k) { dragLab({L: k, a: AB * (2 * u - 1), b: AB * (2 * v - 1)}); }
+    },
+    {
+      id: 'labA', space: 'lab', name: 'a*', axes: 'b* → · L* ↑',
+      current: function () { return state.lab.a; },
+      label: function (k) { return 'a* = ' + fmt(k, 1); },
+      sample: function (u, v, k) { return {lab: {L: 100 * v, a: k, b: AB * (2 * u - 1)}}; },
+      sample3d: function (s, t, k) { return this.sample(s, t, k); },
+      mark: function () { return {u: (1 + state.lab.b / AB) / 2, v: state.lab.L / 100}; },
+      pick: function (u, v, k) { dragLab({L: 100 * v, a: k, b: AB * (2 * u - 1)}); }
+    },
+    {
+      id: 'labB', space: 'lab', name: 'b*', axes: 'a* → · L* ↑',
+      current: function () { return state.lab.b; },
+      label: function (k) { return 'b* = ' + fmt(k, 1); },
+      sample: function (u, v, k) { return {lab: {L: 100 * v, a: AB * (2 * u - 1), b: k}}; },
+      sample3d: function (s, t, k) { return this.sample(s, t, k); },
+      mark: function () { return {u: (1 + state.lab.a / AB) / 2, v: state.lab.L / 100}; },
+      pick: function (u, v, k) { dragLab({L: 100 * v, a: AB * (2 * u - 1), b: k}); }
+    }
+  ];
+
+  function fixedOf(cut) { return (cut.id in anchors) ? anchors[cut.id] : cut.current(); }
 
   // --------------------------------------------------------------------------
   //  Setting the color from each model
@@ -66,8 +163,8 @@
   function fromRGB(c) {
     state.rgb = {R: c.R, G: c.G, B: c.B};
     var h = rgb2hsl(c.R, c.G, c.B);
-    // A gray has no hue and black/white no saturation either; keep the ones we
-    // had, so the pointer does not jump to red when you drag through the axis.
+    // A gray has no hue and black/white no saturation; keep the ones we had,
+    // so the cuts do not jump to red when you pass through the axis.
     if (h.S === 0) { h.H = state.hsl.H; }
     if (h.L === 0 || h.L === 1) { h.S = state.hsl.S; }
     state.hsl = h;
@@ -77,7 +174,7 @@
   }
 
   function fromHSL(h) {
-    state.hsl = {H: h.H - Math.floor(h.H), S: clip(h.S, 0, 1), L: clip(h.L, 0, 1)};
+    state.hsl = {H: wrap(h.H), S: clip(h.S, 0, 1), L: clip(h.L, 0, 1)};
     var c = hsl2rgb(state.hsl);
     state.rgb = c;
     state.lab = rgb2cielab(c.R, c.G, c.B, refWhite());
@@ -85,26 +182,12 @@
     changed();
   }
 
-  // Pull an out-of-gamut L*a*b* color to the sRGB boundary by scaling its
-  // chroma down at constant L* and hue. The neutral axis is always inside, so
-  // bisection on the scale factor converges.
-  function mapToGamut(lab) {
-    var ref = refWhite();
-    if (inGamut(cielab2rgbF(lab, ref))) { return lab; }
-    var lo = 0, hi = 1;
-    for (var i = 0; i < 24; i++) {
-      var m = (lo + hi) / 2;
-      if (inGamut(cielab2rgbF({L: lab.L, a: lab.a * m, b: lab.b * m}, ref))) { lo = m; } else { hi = m; }
-    }
-    return {L: lab.L, a: lab.a * lo, b: lab.b * lo};
-  }
-
-  function fromLab(lab) {
-    var want = {L: clip(lab.L, 0, 100), a: lab.a, b: lab.b};
-    if (state.gamut) { want = mapToGamut(want); }
-    var f = cielab2rgbF(want, refWhite());
+  // Set the color from L*a*b* exactly as given (clipping the display color
+  // if it is outside sRGB, and saying so).
+  function setLab(lab) {
+    var f = cielab2rgbF(lab, refWhite());
     state.clipped = !inGamut(f);
-    state.lab = want;
+    state.lab = {L: lab.L, a: lab.a, b: lab.b};
     var c = rgbClip(f);
     state.rgb = c;
     var h = rgb2hsl(c.R, c.G, c.B);
@@ -113,183 +196,248 @@
     changed();
   }
 
+  // Typed values: with the restriction on, pull an out-of-gamut color to the
+  // boundary by reducing its chroma at constant L* and hue (the neutral axis
+  // is always inside, so bisection on the chroma factor converges).
+  function fromLab(lab) {
+    var want = {L: clip(lab.L, 0, 100), a: lab.a, b: lab.b};
+    if (state.gamut && !inGamut(cielab2rgbF(want, refWhite()))) {
+      var lo = 0, hi = 1;
+      for (var i = 0; i < 24; i++) {
+        var m = (lo + hi) / 2;
+        if (inGamut(cielab2rgbF({L: want.L, a: want.a * m, b: want.b * m}, refWhite()))) { lo = m; } else { hi = m; }
+      }
+      want = {L: want.L, a: want.a * lo, b: want.b * lo};
+    }
+    setLab(want);
+  }
+
+  // Dragging in a Lab cut: with the restriction on, a target outside the gamut
+  // is replaced by the last in-gamut point on the segment from the current
+  // color to it. Both ends lie in the cut's plane, so the color slides along
+  // the gamut's edge without leaving the plane under the pointer.
+  function dragLab(target) {
+    target = {L: clip(target.L, 0, 100), a: target.a, b: target.b};
+    var ref = refWhite();
+    if (!state.gamut || inGamut(cielab2rgbF(target, ref))) { setLab(target); return; }
+    var from = state.lab;
+    if (!inGamut(cielab2rgbF(from, ref))) { fromLab(target); return; }
+    var lo = 0, hi = 1;
+    function at(t) {
+      return {L: from.L + (target.L - from.L) * t, a: from.a + (target.a - from.a) * t,
+              b: from.b + (target.b - from.b) * t};
+    }
+    for (var i = 0; i < 24; i++) {
+      var m = (lo + hi) / 2;
+      if (inGamut(cielab2rgbF(at(m), ref))) { lo = m; } else { hi = m; }
+    }
+    setLab(at(lo));
+  }
+
   // --------------------------------------------------------------------------
-  //  Canvases
+  //  The 2-D cuts
   // --------------------------------------------------------------------------
 
   var DPR = Math.min(window.devicePixelRatio || 1, 2);
-
-  function hidpi(canvas, w, h) {
-    canvas.width = Math.round(w * DPR);
-    canvas.height = Math.round(h * DPR);
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    return canvas.getContext('2d');
-  }
-
-  var cv = {
-    hsl: $('hsl'), hslBar: $('hslBar'), lab: $('lab'), labBar: $('labBar')
-  };
-  var ctx = {
-    hsl: hidpi(cv.hsl, PLANE, PLANE), hslBar: hidpi(cv.hslBar, BAR_W, PLANE),
-    lab: hidpi(cv.lab, PLANE, PLANE), labBar: hidpi(cv.labBar, BAR_W, PLANE)
-  };
-
-  // Backgrounds are rendered pixel by pixel into offscreen canvases and cached
-  // under a key of what they depend on; dragging only redraws the markers.
-  var cache = {};
-
-  function background(name, key, w, h, f) {
-    if (cache[name] && cache[name].key === key) { return cache[name].canvas; }
-    var W = Math.round(w * DPR), H = Math.round(h * DPR);
-    var off = document.createElement('canvas');
-    off.width = W; off.height = H;
-    var g = off.getContext('2d');
-    var img = g.createImageData(W, H), d = img.data;
-    for (var j = 0; j < H; j++) {
-      for (var i = 0; i < W; i++) {
-        var c = f((i + 0.5) / W, 1 - (j + 0.5) / H);   // u, v in [0,1], v up
-        if (!c) { continue; }
-        var k = 4 * (j * W + i);
-        d[k] = c.R; d[k + 1] = c.G; d[k + 2] = c.B; d[k + 3] = 255;
-      }
-    }
-    g.putImageData(img, 0, 0);
-    cache[name] = {key: key, canvas: off};
-    return off;
-  }
-
-  function marker(g, x, y, fill) {
-    g.beginPath();
-    g.arc(x * DPR, y * DPR, 6 * DPR, 0, 2 * Math.PI);
-    g.fillStyle = fill;
-    g.fill();
-    g.lineWidth = 2 * DPR;
-    g.strokeStyle = '#ffffff';
-    g.stroke();
-    g.lineWidth = 1 * DPR;
-    g.strokeStyle = '#000000';
-    g.beginPath();
-    g.arc(x * DPR, y * DPR, 7.5 * DPR, 0, 2 * Math.PI);
-    g.stroke();
-  }
-
-  function barMarker(g, y) {
-    var w = BAR_W * DPR;
-    g.fillStyle = '#ffffff';
-    g.strokeStyle = '#000000';
-    g.lineWidth = DPR;
-    g.beginPath();
-    g.rect(1 * DPR, y * DPR - 3 * DPR, w - 2 * DPR, 6 * DPR);
-    g.fill(); g.stroke();
-  }
-
-  function drawHSL() {
-    var L = state.hsl.L;
-    var bg = background('hsl', L.toFixed(4), PLANE, PLANE, function (u, v) {
-      var x = 2 * u - 1, y = 2 * v - 1, r = Math.hypot(x, y);
-      if (r > 1) { return null; }
-      var H = Math.atan2(y, x) / (2 * Math.PI);
-      return hsl2rgb({H: H - Math.floor(H), S: r, L: L});
-    });
-    var g = ctx.hsl;
-    g.clearRect(0, 0, cv.hsl.width, cv.hsl.height);
-    g.drawImage(bg, 0, 0);
-    var a = 2 * Math.PI * state.hsl.H, R = PLANE / 2;
-    marker(g, R + R * state.hsl.S * Math.cos(a), R - R * state.hsl.S * Math.sin(a), toHex(state.rgb));
-
-    var H = state.hsl.H, S = state.hsl.S;
-    var bar = background('hslBar', H.toFixed(4) + ',' + S.toFixed(4), BAR_W, PLANE, function (u, v) {
-      return hsl2rgb({H: H, S: S, L: v});
-    });
-    var b = ctx.hslBar;
-    b.clearRect(0, 0, cv.hslBar.width, cv.hslBar.height);
-    b.drawImage(bar, 0, 0);
-    barMarker(b, PLANE * (1 - L));
-  }
-
-  function drawLab() {
-    var ref = refWhite(), L = state.lab.L, gam = state.gamut;
-    var key = [L.toFixed(3), state.ref, gam].join(',');
-    var bg = background('lab', key, PLANE, PLANE, function (u, v) {
-      var c = cielab2rgbF({L: L, a: AB * (2 * u - 1), b: AB * (2 * v - 1)}, ref);
-      if (gam && !inGamut(c)) { return null; }
-      return rgbClip(c);
-    });
-    var g = ctx.lab;
-    g.clearRect(0, 0, cv.lab.width, cv.lab.height);
-    // The axes, under the colors: they show through where the gamut ends.
-    g.strokeStyle = 'rgba(255,255,255,0.25)';
-    g.lineWidth = DPR;
-    g.beginPath();
-    g.moveTo(cv.lab.width / 2, 0); g.lineTo(cv.lab.width / 2, cv.lab.height);
-    g.moveTo(0, cv.lab.height / 2); g.lineTo(cv.lab.width, cv.lab.height / 2);
-    g.stroke();
-    g.drawImage(bg, 0, 0);
-    var R = PLANE / 2;
-    marker(g, R + R * state.lab.a / AB, R - R * state.lab.b / AB, toHex(state.rgb));
-
-    var a = state.lab.a, b = state.lab.b;
-    var bar = background('labBar', [a.toFixed(3), b.toFixed(3), state.ref, gam].join(','), BAR_W, PLANE,
-      function (u, v) {
-        var c = cielab2rgbF({L: 100 * v, a: a, b: b}, ref);
-        if (gam && !inGamut(c)) { return null; }
-        return rgbClip(c);
-      });
-    var bb = ctx.labBar;
-    bb.clearRect(0, 0, cv.labBar.width, cv.labBar.height);
-    bb.drawImage(bar, 0, 0);
-    barMarker(bb, PLANE * (1 - L / 100));
-  }
-
-  // --------------------------------------------------------------------------
-  //  Pointer input on the planes and bars
-  // --------------------------------------------------------------------------
-
-  // Local coordinates in [0,1], v up, whatever size CSS gave the canvas.
-  function local(canvas, e) {
-    var r = canvas.getBoundingClientRect();
-    return {u: clip((e.clientX - r.left) / r.width, 0, 1), v: clip(1 - (e.clientY - r.top) / r.height, 0, 1)};
-  }
-
-  function drag(canvas, onMove) {
-    canvas.addEventListener('pointerdown', function (e) {
-      canvas.setPointerCapture(e.pointerId);
-      onMove(local(canvas, e));
-      e.preventDefault();
-    });
-    canvas.addEventListener('pointermove', function (e) {
-      if (canvas.hasPointerCapture(e.pointerId)) { onMove(local(canvas, e)); }
-    });
-  }
-
-  drag(cv.hsl, function (p) {
-    var x = 2 * p.u - 1, y = 2 * p.v - 1;
-    var H = Math.atan2(y, x) / (2 * Math.PI);
-    fromHSL({H: H, S: Math.min(1, Math.hypot(x, y)), L: state.hsl.L});
-  });
-  drag(cv.hslBar, function (p) { fromHSL({H: state.hsl.H, S: state.hsl.S, L: p.v}); });
-  drag(cv.lab, function (p) {
-    fromLab({L: state.lab.L, a: AB * (2 * p.u - 1), b: AB * (2 * p.v - 1)});
-  });
-  drag(cv.labBar, function (p) { fromLab({L: 100 * p.v, a: state.lab.a, b: state.lab.b}); });
-
-  // --------------------------------------------------------------------------
-  //  Controls
-  // --------------------------------------------------------------------------
 
   function el(tag, attrs, kids) {
     var n = document.createElement(tag);
     Object.keys(attrs || {}).forEach(function (k) {
       if (k === 'class') { n.className = attrs[k]; }
       else if (k === 'text') { n.textContent = attrs[k]; }
+      else if (k === 'html') { n.innerHTML = attrs[k]; }
       else { n.setAttribute(k, attrs[k]); }
     });
     (kids || []).forEach(function (c) { n.appendChild(c); });
     return n;
   }
 
-  // sRGB: number + slider per channel, the color-curves row.
+  var cutEls = {};
+
+  CUTS.forEach(function (cut) {
+    var canvas = el('canvas', {'aria-label': (cut.space === 'hsl' ? 'HSL' : 'L*a*b*') + ' cut at constant ' +
+                                             cut.name + ': drag to choose the other two coordinates'});
+    canvas.width = Math.round(CUT_PX * DPR);
+    canvas.height = Math.round(CUT_PX * DPR);
+    var cap = el('figcaption');
+    $(cut.space === 'hsl' ? 'cutsHSL' : 'cutsLab').appendChild(el('figure', {class: 'cut'}, [canvas, cap]));
+    cutEls[cut.id] = {canvas: canvas, cap: cap, key: null, bg: null};
+
+    function local(e) {
+      var r = canvas.getBoundingClientRect();
+      return {u: clip((e.clientX - r.left) / r.width, 0, 1), v: clip(1 - (e.clientY - r.top) / r.height, 0, 1)};
+    }
+    // The active pointer is tracked here rather than read back from
+    // hasPointerCapture, which is not reliable everywhere.
+    var active = null;
+    canvas.addEventListener('pointerdown', function (e) {
+      active = e.pointerId;
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* capture is a nicety */ }
+      anchors[cut.id] = cut.current();
+      var p = local(e);
+      cut.pick(p.u, p.v, anchors[cut.id]);
+      e.preventDefault();
+    });
+    canvas.addEventListener('pointermove', function (e) {
+      if (active !== e.pointerId) { return; }
+      var p = local(e);
+      cut.pick(p.u, p.v, anchors[cut.id]);
+    });
+    function release() { active = null; delete anchors[cut.id]; changed(); }
+    canvas.addEventListener('pointerup', release);
+    canvas.addEventListener('pointercancel', release);
+  });
+
+  function cutBackground(cut, k) {
+    var E = cutEls[cut.id];
+    var key = [fmt(k, 4), cut.space === 'lab' ? state.ref + state.gamut : ''].join(',');
+    if (E.key === key) { return E.bg; }
+    var ref = refWhite(), gam = state.gamut;
+    var off = E.bg || document.createElement('canvas');
+    off.width = CUT_RES; off.height = CUT_RES;
+    var g = off.getContext('2d'), img = g.createImageData(CUT_RES, CUT_RES), d = img.data;
+    for (var j = 0; j < CUT_RES; j++) {
+      for (var i = 0; i < CUT_RES; i++) {
+        var smp = cut.sample((i + 0.5) / CUT_RES, 1 - (j + 0.5) / CUT_RES, k), c = null;
+        if (smp && smp.hsl) { c = hsl2rgb(smp.hsl); }
+        else if (smp) {
+          var f = cielab2rgbF(smp.lab, ref);
+          c = (gam && !inGamut(f)) ? null : rgbClip(f);
+        }
+        if (!c) { continue; }
+        var o = 4 * (j * CUT_RES + i);
+        d[o] = c.R; d[o + 1] = c.G; d[o + 2] = c.B; d[o + 3] = 255;
+      }
+    }
+    g.putImageData(img, 0, 0);
+    E.key = key; E.bg = off;
+    return off;
+  }
+
+  function drawCut(cut) {
+    var E = cutEls[cut.id], k = fixedOf(cut);
+    var g = E.canvas.getContext('2d'), W = E.canvas.width;
+    g.clearRect(0, 0, W, W);
+    if (cut.space === 'lab') {      // axes under the colors: they show where the gamut ends
+      g.strokeStyle = 'rgba(255,255,255,0.22)';
+      g.lineWidth = DPR;
+      g.beginPath();
+      g.moveTo(W / 2, 0); g.lineTo(W / 2, W);
+      if (cut.id === 'labL') { g.moveTo(0, W / 2); g.lineTo(W, W / 2); }
+      g.stroke();
+    }
+    g.imageSmoothingEnabled = true;
+    g.drawImage(cutBackground(cut, k), 0, 0, W, W);
+    var m = cut.mark(k);
+    var x = m.u * W, y = (1 - m.v) * W;
+    g.beginPath(); g.arc(x, y, 5.5 * DPR, 0, 2 * Math.PI);
+    g.fillStyle = toHex(state.rgb); g.fill();
+    g.lineWidth = 2 * DPR; g.strokeStyle = '#fff'; g.stroke();
+    g.lineWidth = DPR; g.strokeStyle = '#000';
+    g.beginPath(); g.arc(x, y, 7 * DPR, 0, 2 * Math.PI); g.stroke();
+    E.cap.innerHTML = '<b>' + cut.name + '</b> fixed · <span class="val">' + cut.label(k) + '</span><br>' + cut.axes;
+  }
+
+  // --------------------------------------------------------------------------
+  //  The solid
+  // --------------------------------------------------------------------------
+
+  // Two stacked canvases: WebGL draws the solid and its cuts, the 2-D overlay
+  // on top draws the marker and the axis names and takes the pointer. Without
+  // WebGL the overlay's canvas falls back to a painter's-algorithm drawing.
+  var solidCanvas = $('solid'), glCanvas = $('solidGL');
+  [solidCanvas, glCanvas].forEach(function (c) {
+    c.width = Math.round(SOLID_PX * DPR);
+    c.height = Math.round(SOLID_PX * DPR);
+  });
+  var renderer = null;
+  try { renderer = Solids.createGL(glCanvas); } catch (e) { console.warn('WebGL unavailable', e); }
+
+  var meshCache = {solid: null, wire: null, solidKey: null, cuts: {}};
+
+  function swap(old, fresh) { if (renderer && old) { renderer.release(old); } return fresh; }
+
+  function solidMesh() {
+    var key = [state.view, state.ref].join(',');
+    if (meshCache.solidKey !== key) {
+      meshCache.solid = swap(meshCache.solid, state.view === 'hsl' ? Solids.solidHSL() : Solids.solidLab(refWhite()));
+      meshCache.wire = swap(meshCache.wire, state.view === 'hsl' ? Solids.wireHSL() : Solids.wireLab(refWhite()));
+      meshCache.solidKey = key;
+    }
+    return meshCache.solid;
+  }
+
+  function cutMesh(cut) {
+    var k = fixedOf(cut);
+    var key = [state.view, state.ref, fmt(k, 4)].join(',');
+    var c = meshCache.cuts[cut.id];
+    if (!c || c.key !== key) {
+      var mesh = Solids.buildCut(cut, k, state.view, refWhite());
+      if (c) { swap(c.mesh, null); }
+      c = meshCache.cuts[cut.id] = {key: key, mesh: mesh};
+    }
+    return c.mesh;
+  }
+
+  function drawSolid() {
+    var scene = {
+      view: state.view, solid: solidMesh(), wire: meshCache.wire, opacity: state.opacity,
+      cuts: CUTS.filter(function (cut) { return state.show[cut.id]; }).map(cutMesh),
+      marker: {p: Solids.posOfRGB(state.view, state.rgb, refWhite()), hex: toHex(state.rgb)}
+    };
+    if (renderer) {
+      renderer.draw(camera, scene);
+      Solids.drawOverlay(solidCanvas, camera, scene, DPR);
+    } else {
+      Solids.drawPainter(solidCanvas, camera, scene, DPR);
+      Solids.drawOverlay(solidCanvas, camera, scene, DPR, true);
+    }
+  }
+
+  (function () {
+    var last = null;
+    solidCanvas.addEventListener('pointerdown', function (e) {
+      try { solidCanvas.setPointerCapture(e.pointerId); } catch (err) { /* capture is a nicety */ }
+      last = {x: e.clientX, y: e.clientY};
+    });
+    solidCanvas.addEventListener('pointermove', function (e) {
+      if (!last) { return; }
+      orbitCamera(camera, -(e.clientX - last.x), e.clientY - last.y);
+      last = {x: e.clientX, y: e.clientY};
+      requestSolid();
+    });
+    solidCanvas.addEventListener('pointerup', function () { last = null; });
+    solidCanvas.addEventListener('pointercancel', function () { last = null; });
+  })();
+
+  var solidFrame = 0;
+  function requestSolid() {
+    if (solidFrame) { return; }
+    solidFrame = requestAnimationFrame(function () { solidFrame = 0; drawSolid(); });
+  }
+
+  // Controls of the solid: space, opacity, which cuts.
+  $('space').addEventListener('change', function () { state.view = $('space').value; changed(); });
+  $('opacity').addEventListener('input', function () { state.opacity = +$('opacity').value; changed(); });
+
+  var toggleEls = {};
+  (function () {
+    var root = $('cutToggles');
+    [['hsl', 'HSL'], ['lab', 'L*a*b*']].forEach(function (sp) {
+      root.appendChild(el('span', {class: 'head', text: sp[1]}));
+      CUTS.filter(function (c) { return c.space === sp[0]; }).forEach(function (cut) {
+        var box = el('input', {type: 'checkbox', id: 'show-' + cut.id});
+        box.addEventListener('change', function () { state.show[cut.id] = box.checked; changed(); });
+        toggleEls[cut.id] = box;
+        root.appendChild(el('label', {for: 'show-' + cut.id}, [box, document.createTextNode(cut.name)]));
+      });
+    });
+  })();
+
+  // --------------------------------------------------------------------------
+  //  Numbers
+  // --------------------------------------------------------------------------
+
   var rgbEls = {};
   ['R', 'G', 'B'].forEach(function (ch) {
     var num = el('input', {type: 'number', class: 'num', min: 0, max: 255, step: 1, id: 'rgb' + ch});
@@ -305,7 +453,6 @@
     $('rgbRows').appendChild(el('div', {class: 'row'}, [el('label', {for: 'rgb' + ch, text: ch}), num, sl]));
   });
 
-  // Hex: accepted as soon as it parses, rewritten in canonical form on blur.
   var hexEl = $('hex');
   hexEl.addEventListener('input', function () {
     var c = hex2rgb(hexEl.value);
@@ -314,7 +461,6 @@
   });
   hexEl.addEventListener('blur', function () { hexEl.classList.remove('bad'); sync(); });
 
-  // Reference white.
   var refEl = $('ref');
   ILLUMINANTS.forEach(function (o) { refEl.appendChild(el('option', {value: o[0], text: o[1]})); });
   refEl.addEventListener('change', function () {
@@ -322,7 +468,6 @@
     fromRGB(state.rgb);   // the stimulus stays; its L*a*b* description changes
   });
 
-  // The readout table: [label, fields], each field [key, unit hint, digits, step, editable].
   var MODELS = [
     {name: 'XYZ', fields: [['X', '', 2], ['Y', '', 2], ['Z', '', 2]], edit: null},
     {name: 'HSL', fields: [['H', 'turn', 4, 0.001], ['S', '0–1', 4, 0.001], ['L', '0–1', 4, 0.001]],
@@ -370,9 +515,11 @@
     $('gamutNote').hidden = !state.clipped;
     refEl.value = state.ref;
     $('gamut').checked = state.gamut;
+    $('space').value = state.view;
+    $('opacity').value = state.opacity;
+    CUTS.forEach(function (cut) { toggleEls[cut.id].checked = !!state.show[cut.id]; });
 
-    var xyz = rgb2xyz(c.R, c.G, c.B);
-    var vals = {'XYZ': xyz, 'HSL': state.hsl, 'L*a*b*': state.lab, 'L*C*h°': lchOf(state.lab)};
+    var vals = {'XYZ': rgb2xyz(c.R, c.G, c.B), 'HSL': state.hsl, 'L*a*b*': state.lab, 'L*C*h°': lchOf(state.lab)};
     MODELS.forEach(function (m) {
       m.fields.forEach(function (f) {
         var inp = readEls[m.name][f[0]];
@@ -401,14 +548,8 @@
       var chip = el('div', {class: 'chip', draggable: 'true', title: 'Click to load, drag to reorder'},
                     [el('div', {class: 'sw'}), el('code', {text: hex}), x]);
       chip.firstChild.style.background = hex;
-      chip.addEventListener('click', function (e) {
-        if (e.target === x) { return; }
-        fromRGB(hex2rgb(hex));
-      });
-      x.addEventListener('click', function () {
-        state.palette.splice(i, 1);
-        renderPalette(); updatePermalink();
-      });
+      chip.addEventListener('click', function (e) { if (e.target !== x) { fromRGB(hex2rgb(hex)); } });
+      x.addEventListener('click', function () { state.palette.splice(i, 1); renderPalette(); updatePermalink(); });
       chip.addEventListener('dragstart', function (e) {
         dragIndex = i; chip.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
@@ -420,12 +561,12 @@
       chip.addEventListener('drop', function (e) {
         e.preventDefault();
         if (dragIndex < 0 || dragIndex === i) { return; }
-        var moved = state.palette.splice(dragIndex, 1)[0];
-        state.palette.splice(i, 0, moved);
+        state.palette.splice(i, 0, state.palette.splice(dragIndex, 1)[0]);
         renderPalette(); updatePermalink();
       });
       root.appendChild(chip);
     });
+    root.scrollLeft = root.scrollWidth;   // the newest swatch in view
   }
 
   function flash(msg) {
@@ -446,39 +587,50 @@
     }
   }
 
-  FORMAT_ORDER.forEach(function (fmt) {
-    var b = el('button', {type: 'button', title: FORMATS[fmt].label,
-                          text: {list: 'copy', css: 'css', json: 'json', gpl: 'gimp'}[fmt]});
+  FORMAT_ORDER.forEach(function (fmtName) {
+    var b = el('button', {type: 'button', title: FORMATS[fmtName].label,
+                          text: {list: 'copy', css: 'css', json: 'json', gpl: 'gimp'}[fmtName]});
     b.addEventListener('click', function () {
       if (!state.palette.length) { flash('The palette is empty'); return; }
-      copy(formatPalette(state.palette, {format: fmt, name: 'color-lab', source: location.href}),
-           FORMATS[fmt].label);
+      copy(formatPalette(state.palette, {format: fmtName, name: 'color-lab', source: location.href}),
+           FORMATS[fmtName].label);
     });
     $('exportButtons').appendChild(b);
   });
 
   // --------------------------------------------------------------------------
-  //  Permalink: ?c=RRGGBB&ref=D65&gamut=0&p=RRGGBB-RRGGBB
+  //  Permalink: ?c=RRGGBB&ref=D65&gamut=0&v=lab&k=hslL.labL&p=RRGGBB-RRGGBB
   // --------------------------------------------------------------------------
+
+  var DEFAULT_SHOW = 'hslL.labL';
+
+  function shownList() { return CUTS.filter(function (c) { return state.show[c.id]; }).map(function (c) { return c.id; }).join('.'); }
 
   function query() {
     var q = ['c=' + toHex(state.rgb).slice(1)];
     if (state.ref !== 'D65') { q.push('ref=' + state.ref); }
     if (!state.gamut) { q.push('gamut=0'); }
-    if (state.palette.length) {
-      q.push('p=' + state.palette.map(function (h) { return h.slice(1); }).join('-'));
-    }
+    if (state.view !== 'hsl') { q.push('v=' + state.view); }
+    if (shownList() !== DEFAULT_SHOW) { q.push('k=' + (shownList() || 'none')); }
+    if (state.palette.length) { q.push('p=' + state.palette.map(function (h) { return h.slice(1); }).join('-')); }
     return '?' + q.join('&');
   }
 
   function updatePermalink() {
-    try { history.replaceState(null, '', query()); } catch (e) { /* file:// in some browsers */ }
+    try { history.replaceState(null, '', query()); } catch (e) { /* some browsers refuse on file:// */ }
   }
 
   function readQuery() {
     var q = new URLSearchParams(location.search);
     if (q.get('ref') && tristimulus[q.get('ref')]) { state.ref = q.get('ref'); }
     if (q.get('gamut') === '0') { state.gamut = false; }
+    if (q.get('v') === 'lab') { state.view = 'lab'; }
+    if (q.get('k')) {
+      state.show = {};
+      q.get('k').split('.').forEach(function (id) {
+        if (CUTS.some(function (c) { return c.id === id; })) { state.show[id] = true; }
+      });
+    }
     (q.get('p') || '').split('-').forEach(function (h) {
       var c = hex2rgb(h);
       if (c) { state.palette.push(toHex(c)); }
@@ -492,14 +644,13 @@
 
   var frame = 0;
   function changed() {
-    // Coalesce bursts of input (a drag fires faster than the screen) into one
-    // repaint per frame.
+    // One repaint per screen frame, however fast the input arrives.
     if (frame) { return; }
     frame = requestAnimationFrame(function () {
       frame = 0;
       sync();
-      drawHSL();
-      drawLab();
+      CUTS.forEach(drawCut);
+      drawSolid();
       updatePermalink();
     });
   }
@@ -510,8 +661,7 @@
   });
 
   function randomColor() {
-    return {R: Math.floor(256 * Math.random()), G: Math.floor(256 * Math.random()),
-            B: Math.floor(256 * Math.random())};
+    return {R: Math.floor(256 * Math.random()), G: Math.floor(256 * Math.random()), B: Math.floor(256 * Math.random())};
   }
 
   $('random').addEventListener('click', function () { fromRGB(randomColor()); });

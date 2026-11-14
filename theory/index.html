@@ -12,7 +12,7 @@
 
 <main class="layout">
 
-  <!-- ---------------- controls and readouts ---------------- -->
+  <!-- ---------------- the color, its numbers ---------------- -->
   <section class="panel panel-controls">
     <h2>Color Models</h2>
     <a href="https://cheque.github.io/"><p class="caption">Cheque Soto</p></a>
@@ -33,19 +33,23 @@
     </fieldset>
 
     <fieldset class="group">
-      <legend>Reference white</legend>
-      <div class="row">
-        <select id="ref" aria-label="Tristimulus reference"></select>
-      </div>
-      <p class="caption left">10° observer (CIE 1964). The XYZ of an sRGB color is fixed by sRGB's own
-        D65 white; the reference only changes how L*a*b* normalizes it, with no chromatic adaptation.</p>
-    </fieldset>
-
-    <fieldset class="group">
       <legend>The same color, in every model</legend>
       <table class="readout" id="readout"></table>
       <p class="caption left">HSL, L*a*b* and L*C*h° are editable. Hue in HSL is a turn (0–1), as in the curves
         instrument; h° in L*C*h° is in degrees.</p>
+    </fieldset>
+
+    <fieldset class="group">
+      <legend>Reference white</legend>
+      <div class="row">
+        <select id="ref" aria-label="Tristimulus reference"></select>
+      </div>
+      <div class="row">
+        <input type="checkbox" id="gamut" checked>
+        <label for="gamut">Restrict L*a*b* to the sRGB gamut</label>
+      </div>
+      <p class="caption left">10° observer (CIE 1964). The XYZ of an sRGB color is fixed by sRGB's own
+        D65 white; the reference only changes how L*a*b* normalizes it, with no chromatic adaptation.</p>
     </fieldset>
 
     <div class="actions">
@@ -55,41 +59,54 @@
     </div>
   </section>
 
-  <!-- ---------------- HSL ---------------- -->
-  <section class="panel panel-plane">
-    <div class="plane">
-      <canvas id="hsl" aria-label="HSL disc at constant lightness: drag to choose hue and saturation"></canvas>
-      <canvas id="hslBar" class="bar" aria-label="HSL lightness: drag to choose"></canvas>
-    </div>
-    <p class="caption">(H, S) disc at constant L &middot; L profile</p>
+  <!-- ---------------- the six plane cuts ---------------- -->
+  <section class="panel panel-cuts">
+    <div class="cuts-head">HSL</div>
+    <div class="cuts" id="cutsHSL"></div>
+    <div class="cuts-head">CIE L*a*b*</div>
+    <div class="cuts" id="cutsLab"></div>
+    <p class="caption">Each cut holds one coordinate fixed; drag inside it to move the color within that plane.</p>
   </section>
 
-  <!-- ---------------- CIE L*a*b* ---------------- -->
-  <section class="panel panel-plane">
-    <div class="plane">
-      <canvas id="lab" aria-label="a*b* plane at constant L*: drag to choose a* and b*"></canvas>
-      <canvas id="labBar" class="bar" aria-label="CIE lightness: drag to choose"></canvas>
+  <!-- ---------------- one solid, in 3-D ---------------- -->
+  <section class="panel panel-solid">
+    <div class="solid-stack">
+      <canvas id="solidGL" aria-hidden="true"></canvas>
+      <canvas id="solid" aria-label="The chosen color solid with its plane cuts: drag to rotate"></canvas>
     </div>
-    <p class="caption">(a*, b*) plane at constant L* &middot; L* profile</p>
-    <div class="row center">
-      <input type="checkbox" id="gamut" checked>
-      <label for="gamut">Restrict to the sRGB gamut</label>
-    </div>
-  </section>
-
-  <!-- ---------------- palette ---------------- -->
-  <section class="panel panel-palette">
     <fieldset class="group">
-      <legend>Palette</legend>
-      <div id="palette" class="palette-strip" aria-live="polite"></div>
-      <p id="paletteHint" class="caption left">Press <strong>Sample this color</strong> to collect it here.
-        Drag swatches to reorder, click one to load it, × to remove it. The number between two swatches is their
-        CIEDE2000 difference.</p>
-      <div class="actions" id="exportButtons"></div>
+      <legend>Solid</legend>
+      <div class="row">
+        <select id="space" aria-label="Solid shown">
+          <option value="hsl">HSL cylinder</option>
+          <option value="lab">L*a*b*: the sRGB gamut</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="opacity">opacity</label>
+        <input type="range" id="opacity" class="slider" min="0" max="0.6" step="0.01" value="0.14">
+      </div>
+      <div class="cut-toggles" id="cutToggles"></div>
+      <p class="caption left">Cuts of the space shown are flat. The other space's cuts are carried over point by
+        point by the color conversion, and arrive curved. Drag to rotate.</p>
     </fieldset>
   </section>
 
 </main>
+
+<!-- ---------------- palette, full width ---------------- -->
+<section class="palette-bar">
+  <fieldset class="group">
+    <legend>Palette</legend>
+    <div class="palette-row">
+      <div id="palette" class="palette-strip" aria-live="polite"></div>
+      <div class="actions" id="exportButtons"></div>
+    </div>
+    <p id="paletteHint" class="caption left">Press <strong>Sample this color</strong> to collect it here.
+      Drag swatches to reorder, click one to load it, × to remove it. The number between two swatches is their
+      CIEDE2000 difference.</p>
+  </fieldset>
+</section>
 
 <div id="status" class="status" role="status" aria-live="polite"></div>
 
@@ -98,7 +115,9 @@
 </footer>
 
 <script src="../lib/color.js"></script>
+<script src="../lib/scene.js"></script>
 <script src="../lib/palette.js"></script>
+<script src="src/solids.js"></script>
 <script src="src/app.js"></script>
 
 </body>

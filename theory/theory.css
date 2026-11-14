@@ -1,35 +1,29 @@
 /* theory.css — layout of the color-model explorer. Tokens and controls come from lib/applet.css
-   (color-curves' stylesheet), so this file only places things. */
+   (color-curves' stylesheet), so this file only places things. The three panels (numbers, cuts, solid)
+   sit as one centered block; the palette runs full width beneath them. */
 
-.panel-controls { width: 340px; flex: 0 0 auto; }
-.panel-plane    { flex: 0 0 auto; }
-.panel-palette  { flex: 1 1 100%; max-width: 1180px; }
+.layout { max-width: 1440px; margin: 0 auto; }
+.panel-controls { width: 330px; flex: 0 0 auto; }
+.panel-cuts     { flex: 0 0 auto; }
+.panel-solid    { width: 420px; flex: 0 0 auto; }
 
 .caption.left { text-align: left; }
 .caption.warn { color: #ffd166; margin: 4px 0 0; text-align: left; }
-.row.center   { justify-content: center; }
 
 /* the selected color */
 .current { display: flex; gap: 12px; align-items: center; margin: 0 0 12px; }
-.big-swatch {
-  flex: 0 0 96px; height: 64px;
-  border: 3px solid #fff; border-radius: 8px;
-}
+.big-swatch { flex: 0 0 96px; height: 64px; border: 3px solid #fff; border-radius: 8px; }
 .current-side { flex: 1 1 auto; }
 .hex {
   width: 100%;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 18px; text-transform: uppercase; text-align: center;
-  padding: 6px;
+  font-size: 18px; text-transform: uppercase; text-align: center; padding: 6px;
 }
 .hex.bad { border-color: #ff6b6b; }
 
 /* readout table: one row per model, three editable numbers each */
 .readout { width: 100%; border-collapse: collapse; font-size: 12px; }
-.readout th {
-  text-align: left; font-weight: 400; color: var(--muted);
-  padding: 4px 6px 4px 0; white-space: nowrap; width: 58px;
-}
+.readout th { text-align: left; font-weight: 400; color: var(--muted); padding: 4px 6px 4px 0; white-space: nowrap; width: 58px; }
 .readout td { padding: 2px; }
 .readout td span { display: block; font-size: 10px; color: var(--muted); }
 .readout input {
@@ -39,15 +33,39 @@
 }
 .readout input[readonly] { background: transparent; border-color: transparent; color: var(--muted); }
 
-/* the two planes, each with its lightness bar */
-.plane { display: flex; gap: 20px; align-items: flex-start; }
-.plane canvas { touch-action: none; cursor: crosshair; }
-.plane canvas.bar { cursor: ns-resize; border-radius: 4px; }
+/* the six cuts: two rows of three */
+.cuts-head {
+  font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  margin: 0 0 6px;
+}
+.cuts { display: grid; grid-template-columns: repeat(3, 156px); gap: 14px; margin-bottom: 14px; }
+.cut { margin: 0; }
+.cut canvas { width: 156px; height: 156px; touch-action: none; cursor: crosshair; border-radius: 4px; }
+.cut figcaption { font-size: 11px; line-height: 1.35; color: var(--muted); margin-top: 4px; }
+.cut figcaption b { color: var(--ink); font-weight: 600; }
+.cut figcaption .val { color: var(--accent); font-family: ui-monospace, Menlo, Consolas, monospace; }
 
-/* palette strip */
-.palette-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; min-height: 64px; }
+/* the solid */
+.solid-stack { position: relative; width: 420px; height: 420px; margin-bottom: 8px; }
+.solid-stack canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+#solid { cursor: grab; touch-action: none; }
+#solid:active { cursor: grabbing; }
+.panel-solid .row > label { flex: 0 0 64px; }
+.cut-toggles { display: grid; grid-template-columns: auto 1fr 1fr 1fr; gap: 4px 10px; align-items: center; margin: 8px 0 2px; font-size: 13px; }
+.cut-toggles .head { color: var(--muted); font-size: 12px; }
+.cut-toggles label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.cut-toggles input { accent-color: var(--accent); }
+
+/* palette, full width at the foot */
+.palette-bar { max-width: 1440px; margin: 8px auto 0; }
+.palette-row { display: flex; align-items: center; gap: 16px; }
+.palette-strip {
+  flex: 1 1 auto; display: flex; flex-wrap: nowrap; align-items: center; gap: 2px;
+  min-height: 72px; overflow-x: auto; padding: 8px 4px;
+}
+.palette-row .actions { flex: 0 0 auto; margin: 0; }
 .chip {
-  position: relative;
+  position: relative; flex: 0 0 auto;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   padding: 6px; border-radius: 8px; background: var(--field);
   cursor: grab; user-select: none;
@@ -58,15 +76,14 @@
 .chip code { font-size: 10px; color: var(--muted); }
 .chip .x {
   position: absolute; top: -6px; right: -6px;
-  width: 18px; height: 18px; padding: 0; line-height: 14px;
-  border-radius: 50%; font-size: 12px;
+  width: 18px; height: 18px; padding: 0; line-height: 14px; border-radius: 50%; font-size: 12px;
 }
-.de {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 10px; color: var(--accent); padding: 0 4px;
-}
+.de { flex: 0 0 auto; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10px; color: var(--accent); padding: 0 4px; }
 
 @media (max-width: 900px) {
-  .panel-controls { width: 100%; }
-  .plane { justify-content: center; }
+  .panel-controls, .panel-solid { width: 100%; }
+  .solid-stack { width: 100%; height: auto; aspect-ratio: 1; }
+  .cuts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .cut canvas { width: 100%; height: auto; aspect-ratio: 1; }
+  .palette-row { flex-direction: column; align-items: stretch; }
 }
