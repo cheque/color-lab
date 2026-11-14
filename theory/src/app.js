@@ -40,8 +40,7 @@
   ];
 
   var AB = Solids.AB;      // a*, b* span [-AB, AB] in the cuts and the solid
-  var CUT_PX = 234;        // CSS size of a cut
-  var CUT_RES = 220;       // pixels computed per side of a cut (drawn smoothed)
+  var CUT_PX = 200;        // CSS size of a cut; computed at device resolution, drawn 1:1
   var SOLID_PX = 630;      // CSS size of the 3-D view
 
   var state = {
@@ -56,7 +55,8 @@
     opacity: 0.14,
     show: {hslL: true, labL: true}     // the cuts shown in 3-D
   };
-  var camera = {th: 0.38, ph: 0.09};
+  var CAMERA0 = {th: 0.38, ph: 0.09, zoom: 1, panX: 0, panY: 0};
+  var camera = Object.assign({}, CAMERA0);
   var anchors = {};                    // cut id -> pinned fixed value while dragging
 
   function refWhite() { return tristimulus[state.ref]; }
@@ -294,18 +294,20 @@
     if (E.key === key) { return E.bg; }
     var ref = refWhite(), gam = state.gamut;
     var off = E.bg || document.createElement('canvas');
-    off.width = CUT_RES; off.height = CUT_RES;
-    var g = off.getContext('2d'), img = g.createImageData(CUT_RES, CUT_RES), d = img.data;
-    for (var j = 0; j < CUT_RES; j++) {
-      for (var i = 0; i < CUT_RES; i++) {
-        var smp = cut.sample((i + 0.5) / CUT_RES, 1 - (j + 0.5) / CUT_RES, k), c = null;
+    // One computed pixel per device pixel: the cut is drawn 1:1, never scaled.
+    var RES = E.canvas.width;
+    off.width = RES; off.height = RES;
+    var g = off.getContext('2d'), img = g.createImageData(RES, RES), d = img.data;
+    for (var j = 0; j < RES; j++) {
+      for (var i = 0; i < RES; i++) {
+        var smp = cut.sample((i + 0.5) / RES, 1 - (j + 0.5) / RES, k), c = null;
         if (smp && smp.hsl) { c = hsl2rgb(smp.hsl); }
         else if (smp) {
           var f = cielab2rgbF(smp.lab, ref);
           c = (gam && !inGamut(f)) ? null : rgbClip(f);
         }
         if (!c) { continue; }
-        var o = 4 * (j * CUT_RES + i);
+        var o = 4 * (j * RES + i);
         d[o] = c.R; d[o + 1] = c.G; d[o + 2] = c.B; d[o + 3] = 255;
       }
     }
@@ -326,8 +328,7 @@
       if (cut.id === 'labL') { g.moveTo(0, W / 2); g.lineTo(W, W / 2); }
       g.stroke();
     }
-    g.imageSmoothingEnabled = true;
-    g.drawImage(cutBackground(cut, k), 0, 0, W, W);
+    g.drawImage(cutBackground(cut, k), 0, 0);
     var m = cut.mark(k);
     var x = m.u * W, y = (1 - m.v) * W;
     g.beginPath(); g.arc(x, y, 5.5 * DPR, 0, 2 * Math.PI);
@@ -395,19 +396,46 @@
   }
 
   (function () {
-    var last = null;
+    // Drag rotates; shift-drag, or the right or middle button, pans; the wheel
+    // zooms about the pointer; a double click puts the view back.
+    var last = null, panning = false;
     solidCanvas.addEventListener('pointerdown', function (e) {
       try { solidCanvas.setPointerCapture(e.pointerId); } catch (err) { /* capture is a nicety */ }
       last = {x: e.clientX, y: e.clientY};
+      panning = e.shiftKey || e.button === 1 || e.button === 2;
+      e.preventDefault();
     });
     solidCanvas.addEventListener('pointermove', function (e) {
       if (!last) { return; }
-      orbitCamera(camera, -(e.clientX - last.x), e.clientY - last.y);
+      var dx = e.clientX - last.x, dy = e.clientY - last.y, r = solidCanvas.getBoundingClientRect();
+      if (panning) {
+        camera.panX += 2 * dx / r.width;
+        camera.panY -= 2 * dy / r.height;
+      } else {
+        orbitCamera(camera, -dx, dy);
+      }
       last = {x: e.clientX, y: e.clientY};
       requestSolid();
     });
     solidCanvas.addEventListener('pointerup', function () { last = null; });
     solidCanvas.addEventListener('pointercancel', function () { last = null; });
+    solidCanvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    solidCanvas.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      var r = solidCanvas.getBoundingClientRect();
+      // The pointer, in the pan's units (half the canvas, y up).
+      var px = 2 * (e.clientX - r.left) / r.width - 1, py = 1 - 2 * (e.clientY - r.top) / r.height;
+      var z0 = camera.zoom, z1 = clip(z0 * Math.exp(-e.deltaY * 0.0015), 0.4, 8);
+      // Keep the point under the pointer fixed while the scale changes.
+      camera.panX = px - (px - camera.panX) * z1 / z0;
+      camera.panY = py - (py - camera.panY) * z1 / z0;
+      camera.zoom = z1;
+      requestSolid();
+    }, {passive: false});
+    solidCanvas.addEventListener('dblclick', function () {
+      Object.assign(camera, CAMERA0);
+      requestSolid();
+    });
   })();
 
   var solidFrame = 0;

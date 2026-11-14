@@ -26,7 +26,7 @@ var Solids = (function () {
   'use strict';
 
   var AB = 110;          // a*, b* in [-AB, AB] map to [-1, 1]
-  var SOLID_N = 24;      // grid per face of the boundary
+  var SOLID_N = 36;      // grid per face of the boundary
   var CUT_N = 48;        // grid per cut
   var FIT = 0.875 / Math.SQRT2;   // the cylinder's rims fit from every angle
 
@@ -140,56 +140,101 @@ var Solids = (function () {
   }
 
   // ---- a cut, in its own space or carried into the other -------------------
+  //
+  // `cut.sample3d(s, t, val)` gives the cut's point for coordinates s, t in
+  // [0,1] (see the CUTS table in app.js).
+  //
+  // The surfaces are exact images of the color conversions, so they are
+  // tessellated finely rather than approximated (a Bézier patch could only
+  // approximate what can be evaluated exactly; per-vertex colors already make
+  // the shading smooth).
+  //
+  // HSL cuts are whole shapes (a disc, a rectangle, a closed cylinder) and use
+  // a plain grid. An L*a*b* cut is only the part of its plane inside the sRGB
+  // gamut, a region with a curved rim. It is meshed in POLAR coordinates
+  // around an interior point: along each of NA rays the rim is found by
+  // marching and bisection, and NR rings fill the region. The rim is then one
+  // smooth closed curve, with no staircase, slivers or gaps.
 
-  // `cut.sample3d(s, t, val)` gives the cut's point for grid coordinates
-  // s, t in [0,1] (see the CUTS table in app.js).
+  var NA = 160, NR = 28;
+
   function buildCut(cut, val, view, ref) {
-    var N = CUT_N;
-
-    // The cut's vertex at grid coordinates (s, t): position in the view's
-    // space and color, or null where it has no sRGB color.
     function vertex(s, t) {
       var smp = cut.sample3d(s, t, val), c = rgbOfSample(smp, ref);
       if (!c) { return null; }
       var p = (cut.space === view) ? (smp.hsl ? posHSL(smp.hsl) : posLab(smp.lab)) : posOfRGB(view, c, ref);
       return {p: p, c: c};
     }
+    return cut.space === 'lab' ? polarMesh(vertex) : gridMesh(vertex, CUT_N);
+  }
 
-    var grid = [];
+  function gridMesh(vertex, N) {
+    var grid = [], quads = [];
     for (var j = 0; j <= N; j++) {
       grid.push([]);
       for (var i = 0; i <= N; i++) { grid[j].push(vertex(i / N, j / N)); }
     }
-
-    var quads = [];
     for (var jj = 0; jj < N; jj++) {
       for (var ii = 0; ii < N; ii++) {
-        var st = [[ii, jj], [ii + 1, jj], [ii + 1, jj + 1], [ii, jj + 1]];
-        var q = st.map(function (c) { return grid[c[1]][c[0]]; });
-        var inside = q.filter(Boolean).length;
-        if (inside === 0) { continue; }
+        var q = [grid[jj][ii], grid[jj][ii + 1], grid[jj + 1][ii + 1], grid[jj + 1][ii]];
+        if (q[0] && q[1] && q[2] && q[3]) { quads.push(asQuad(q)); }
+      }
+    }
+    return {quads: quads};
+  }
 
-        // A quad straddling the gamut's edge: pull each outside corner in along
-        // an edge to an inside corner, by bisection, until it sits on the
-        // boundary. Without this the rim is a staircase of whole quads.
-        if (inside < 4) {
-          var fixed = q.slice();
-          for (var k = 0; k < 4; k++) {
-            if (q[k]) { continue; }
-            var from = q[(k + 3) % 4] ? (k + 3) % 4 : q[(k + 1) % 4] ? (k + 1) % 4 : (k + 2) % 4;
-            if (!q[from]) { continue; }
-            var a = st[from], b = st[k], lo = 0, hi = 1, best = q[from];
-            for (var it = 0; it < 14; it++) {
-              var m = (lo + hi) / 2;
-              var v = vertex((a[0] + (b[0] - a[0]) * m) / N, (a[1] + (b[1] - a[1]) * m) / N);
-              if (v) { lo = m; best = v; } else { hi = m; }
-            }
-            fixed[k] = best;
-          }
-          q = fixed;
-          if (!q[0] || !q[1] || !q[2] || !q[3]) { continue; }
+  function asQuad(q) { return {p: q.map(function (x) { return x.p; }), c: q.map(function (x) { return x.c; })}; }
+
+  function polarMesh(vertex) {
+    // An interior point: the centroid of the in-gamut samples on a coarse grid,
+    // or the in-gamut sample nearest to it.
+    var M = 24, pts = [], sx = 0, sy = 0;
+    for (var j = 0; j <= M; j++) {
+      for (var i = 0; i <= M; i++) {
+        if (vertex(i / M, j / M)) { pts.push([i / M, j / M]); sx += i / M; sy += j / M; }
+      }
+    }
+    if (!pts.length) { return {quads: []}; }
+    var cx = sx / pts.length, cy = sy / pts.length;
+    if (!vertex(cx, cy)) {
+      pts.sort(function (a, b) { return Math.hypot(a[0] - cx, a[1] - cy) - Math.hypot(b[0] - cx, b[1] - cy); });
+      cx = pts[0][0]; cy = pts[0][1];
+    }
+
+    // The rim: along each ray, march to the first point outside (or the edge
+    // of the square), then bisect.
+    var rim = [];
+    for (var a = 0; a < NA; a++) {
+      var phi = 2 * Math.PI * a / NA, dx = Math.cos(phi), dy = Math.sin(phi);
+      var rmax = Math.min(dx > 1e-9 ? (1 - cx) / dx : dx < -1e-9 ? cx / -dx : Infinity,
+                          dy > 1e-9 ? (1 - cy) / dy : dy < -1e-9 ? cy / -dy : Infinity);
+      var step = rmax / 48, lo = 0, hi = null;
+      for (var r = step; r <= rmax + 1e-12; r += step) {
+        if (vertex(cx + r * dx, cy + r * dy)) { lo = r; } else { hi = r; break; }
+      }
+      if (hi !== null) {
+        for (var it = 0; it < 18; it++) {
+          var m = (lo + hi) / 2;
+          if (vertex(cx + m * dx, cy + m * dy)) { lo = m; } else { hi = m; }
         }
-        quads.push({p: q.map(function (x) { return x.p; }), c: q.map(function (x) { return x.c; })});
+      }
+      rim.push({dx: dx, dy: dy, R: lo});
+    }
+
+    // Rings from the center out to the rim.
+    var g = [];
+    for (var k = 0; k <= NR; k++) {
+      g.push([]);
+      for (var b = 0; b < NA; b++) {
+        var f = k / NR, v = vertex(cx + f * rim[b].R * rim[b].dx, cy + f * rim[b].R * rim[b].dy);
+        g[k].push(v || (k ? g[k - 1][b] : null));
+      }
+    }
+    var quads = [];
+    for (var kk = 0; kk < NR; kk++) {
+      for (var bb = 0; bb < NA; bb++) {
+        var nb = (bb + 1) % NA, q = [g[kk][bb], g[kk][nb], g[kk + 1][nb], g[kk + 1][bb]];
+        if (q[0] && q[1] && q[2] && q[3]) { quads.push(asQuad(q)); }
       }
     }
     return {quads: quads};
@@ -197,9 +242,13 @@ var Solids = (function () {
 
   // ---- the overlay: the marker and the axis names --------------------------
 
-  function toScreen(p, basis, W, H) {
-    var q = project(p, basis), s = (Math.min(W, H) / 2) * FIT;
-    return {x: W / 2 + s * q.x, y: H / 2 - s * q.y};
+  // The view transform shared by WebGL, the overlay and the fallback:
+  // orthographic projection, then zoom, then a pan in units of half the canvas.
+  function zoomOf(camera) { return FIT * (camera.zoom || 1); }
+
+  function toScreen(p, basis, W, H, camera) {
+    var q = project(p, basis), s = (Math.min(W, H) / 2) * zoomOf(camera);
+    return {x: W / 2 + s * q.x + (camera.panX || 0) * W / 2, y: H / 2 - s * q.y - (camera.panY || 0) * H / 2};
   }
 
   // `keep` draws over what is there (the painter's fallback shares the canvas).
@@ -209,7 +258,7 @@ var Solids = (function () {
     if (!keep) { ctx.clearRect(0, 0, W, H); }
     var basis = cameraBasis(camera);
     if (scene.marker) {
-      var m = toScreen(scene.marker.p, basis, W, H);
+      var m = toScreen(scene.marker.p, basis, W, H, camera);
       ctx.beginPath(); ctx.arc(m.x, m.y, 6 * dpr, 0, 2 * Math.PI);
       ctx.fillStyle = scene.marker.hex; ctx.fill();
       ctx.lineWidth = 2 * dpr; ctx.strokeStyle = '#fff'; ctx.stroke();
@@ -222,7 +271,7 @@ var Solids = (function () {
       ? [[{x: 1.05, y: 0, z: 0}, '+a*'], [{x: 0, y: 1.05, z: 0}, '+b*'], [{x: 0, y: 0, z: 1.1}, 'L*']]
       : [[{x: 1.08, y: 0, z: 1}, 'H = 0'], [{x: 0, y: 0, z: 1.1}, 'L']];
     labels.forEach(function (lbl) {
-      var q = toScreen(lbl[0], basis, W, H);
+      var q = toScreen(lbl[0], basis, W, H, camera);
       ctx.fillText(lbl[1], q.x - 8 * dpr, q.y + 4 * dpr);
     });
   }
@@ -231,10 +280,10 @@ var Solids = (function () {
 
   var VS = [
     'attribute vec3 p; attribute vec4 c;',
-    'uniform vec3 R, U, E; uniform float s;',
+    'uniform vec3 R, U, E; uniform float s; uniform vec2 T;',
     'varying vec4 vc;',
     'void main() {',
-    '  gl_Position = vec4(s * dot(p, R), s * dot(p, U), -0.5 * dot(p, E), 1.0);',
+    '  gl_Position = vec4(s * dot(p, R) + T.x, s * dot(p, U) + T.y, -0.5 * dot(p, E), 1.0);',
     '  vc = c;',
     '}'
   ].join('\n');
@@ -262,6 +311,7 @@ var Solids = (function () {
       p: gl.getAttribLocation(prog, 'p'), c: gl.getAttribLocation(prog, 'c'),
       R: gl.getUniformLocation(prog, 'R'), U: gl.getUniformLocation(prog, 'U'),
       E: gl.getUniformLocation(prog, 'E'), s: gl.getUniformLocation(prog, 's'),
+      T: gl.getUniformLocation(prog, 'T'),
       alpha: gl.getUniformLocation(prog, 'alpha')
     };
 
@@ -318,7 +368,8 @@ var Solids = (function () {
       gl.uniform3f(loc.R, basis.right.x, basis.right.y, basis.right.z);
       gl.uniform3f(loc.U, basis.up.x, basis.up.y, basis.up.z);
       gl.uniform3f(loc.E, basis.eye.x, basis.eye.y, basis.eye.z);
-      gl.uniform1f(loc.s, FIT);
+      gl.uniform1f(loc.s, zoomOf(camera));
+      gl.uniform2f(loc.T, camera.panX || 0, camera.panY || 0);
       gl.enable(gl.DEPTH_TEST);
       gl.depthFunc(gl.LEQUAL);
 
@@ -343,9 +394,9 @@ var Solids = (function () {
 
   function drawPainter(canvas, camera, scene, dpr) {
     var ctx = canvas.getContext('2d'), W = canvas.width, H = canvas.height;
-    var s = (Math.min(W, H) / 2) * FIT, basis = cameraBasis(camera), px = 1 / s;
+    var s = (Math.min(W, H) / 2) * zoomOf(camera), basis = cameraBasis(camera), px = 1 / s;
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, W, H);
-    ctx.setTransform(s, 0, 0, -s, W / 2, H / 2);
+    ctx.setTransform(s, 0, 0, -s, W / 2 + (camera.panX || 0) * W / 2, H / 2 - (camera.panY || 0) * H / 2);
     var items = [];
     function add(mesh, alpha) {
       mesh.quads.forEach(function (q) {

@@ -40,8 +40,8 @@
   margin: 0 0 10px; text-align: center;
 }
 .cuts { display: flex; flex-direction: column; gap: 16px; margin-bottom: 14px; }
-.cut { margin: 0; width: 234px; }
-.cut canvas { width: 234px; height: 234px; touch-action: none; cursor: crosshair; border-radius: 4px; }
+.cut { margin: 0; width: 200px; }
+.cut canvas { width: 200px; height: 200px; touch-action: none; cursor: crosshair; border-radius: 4px; }
 .cut figcaption { font-size: 11px; line-height: 1.35; color: var(--muted); margin-top: 4px; }
 .cut figcaption b { color: var(--ink); font-weight: 600; }
 .cut figcaption .val { color: var(--accent); font-family: ui-monospace, Menlo, Consolas, monospace; }
