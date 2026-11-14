@@ -1,0 +1,51 @@
+<div align="center">
+
+# Color Lab
+
+**Color is space: let's travel through.**
+
+### [**▶&nbsp; Open the lab**](https://cheque.github.io/color-lab/)
+
+</div>
+
+Every colour is a point in a solid: the HSL cylinder, the perceptual L\*a\*b\* space, the RGB cube.
+A gradient is a path through it, a palette is a handful of stops along the way, and a harmony is a shape.
+These instruments draw those shapes and give back the colours.
+
+## The math of it
+
+| | instrument | |
+|---|---|---|
+| 0 | [**Parametric curves**](https://cheque.github.io/color-lab/curves/) · [widget](https://cheque.github.io/color-lab/curves/widget.html) | A curve through the HSL cylinder, its gradient, and a palette spaced evenly to the eye ([Bridges 2023](https://archive.bridgesmathart.org/2023/bridges2023-181.html)). Details in [`curves/README.md`](curves/README.md). |
+| 1 | [**Colour models**](https://cheque.github.io/color-lab/theory/) | One colour in sRGB, XYZ, CIE L\*a\*b\*, L\*C\*h° and HSL at once: the HSL disc, the a\*b\* plane, the reference white, the sRGB gamut, and a palette you collect. |
+
+## Some applications (in the workshop)
+
+| | instrument | status |
+|---|---|---|
+| 2 | Palettes from a photograph: a nested pyramid of palettes | [literature review](docs/literature-review-palette-sampling.md) |
+| 3 | Palette analysis: minimum-variance Béziers through given colours | [specification](docs/spec-palette-analysis.md) |
+| 4 | Random flights: the disc an arrow cuts through a colour solid | [specification](docs/spec-random-flights.md) |
+
+## Layout
+
+```
+index.html, css/, src/home.js   the home page (cards drawn live by the instruments' code)
+lib/                            shared core: color.js, scene.js, reparam.js, palette.js, rangepair.js, applet.css
+curves/                         0 · parametric curves and the palette-picker widget
+theory/                         1 · colour models
+sampling/ analysis/ trajectories/   2–4 · placeholder pages
+docs/                           the review and specifications
+legacy/colortheory/             the original colour-model explorer, verbatim
+```
+
+Plain classic scripts, no build step: every page opens straight from the filesystem.
+
+## History
+
+The curves instrument was imported from [cheque/color-curves](https://github.com/cheque/color-curves) at
+`21eb871`; that repository stays as the published reference. The colour-model explorer is a rewrite of
+[chequesoto.info/colortheory](https://chequesoto.info/colortheory/), whose original code is kept in
+`legacy/colortheory/`.
+
+Cheque Soto · [cheque.github.io](https://cheque.github.io/)

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Palette analysis — Color Lab</title>
+  <link rel="icon" href="https://cheque.github.io/assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../lib/applet.css">
+  <link rel="stylesheet" href="../lib/soon.css">
+</head>
+<body>
+  <main class="soon-page">
+    <h2>Palette analysis</h2>
+    <span class="status-tag">in the workshop · specification</span>
+    <p>Place a few colours in the HSL solid and join them by chains of Bézier curves that keep lightness, saturation or hue as steady as possible, then resample each curve into a palette.</p>
+    <p>What it will do:</p>
+    <ul>
+      <li>Minimum-variance Béziers for L (exact, one linear solve), S and H (numerical).</li>
+      <li>Cartesian and cylindrical interpolation side by side: across the solid, or around it.</li>
+      <li>Variances, length in ΔE00 and palette evenness for every curve.</li>
+    </ul>
+    <div class="actions">
+      <a href="https://github.com/cheque/color-lab/blob/main/docs/spec-palette-analysis.md"><button type="button">Read the specification</button></a>
+      <a href="../index.html"><button type="button">&larr; Color Lab</button></a>
+    </div>
+  </main>
+</body>
+</html>

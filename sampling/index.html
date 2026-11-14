@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Palettes from a photograph — Color Lab</title>
+  <link rel="icon" href="https://cheque.github.io/assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../lib/applet.css">
+  <link rel="stylesheet" href="../lib/soon.css">
+</head>
+<body>
+  <main class="soon-page">
+    <h2>Palettes from a photograph</h2>
+    <span class="status-tag">in the workshop · literature review</span>
+    <p>Load a photograph and get a pyramid of palettes: one colour, two, three… each row refining the one above, so the image's colour structure reads from coarse to fine.</p>
+    <p>What it will do:</p>
+    <ul>
+      <li>A divisive tree in CIELAB (binary splitting) as the backbone, so the rows are nested.</li>
+      <li>Lineage lines between rows, like the connecting lines in the curves instrument.</li>
+      <li>Live readouts: reconstruction error and diversity (ΔE00) for each row, and the photo repainted with it.</li>
+      <li>Send any row to palette analysis, or plot it in the HSL cylinder.</li>
+    </ul>
+    <div class="actions">
+      <a href="https://github.com/cheque/color-lab/blob/main/docs/literature-review-palette-sampling.md"><button type="button">Read the literature review</button></a>
+      <a href="../index.html"><button type="button">&larr; Color Lab</button></a>
+    </div>
+  </main>
+</body>
+</html>
