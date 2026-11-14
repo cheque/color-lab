@@ -1,0 +1,234 @@
+/* ==========================================================================
+   Parametric Curves in Color Space
+   The original stylesheet was shared verbatim with colortheory/ and positioned
+   the three panels with absolute left offsets, so the layout broke below
+   ~1250px. It is a flex row now; the colours and the dark ground are unchanged.
+   ========================================================================== */
+
+:root {
+  --bg:      #666666;
+  --panel:   #5b5b5b;
+  --ink:     #ffffff;
+  --muted:   #d6d6d6;
+  --accent:  #49f5da;
+  --line:    #7a7a7a;
+  --field:   #3a3a3a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 16px 16px 48px;
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+}
+
+a { text-decoration: none; color: var(--accent); }
+a:hover { text-decoration: underline; }
+
+h2 { margin: 0 0 4px; font-size: 20px; line-height: 1.25; text-align: center; }
+
+.caption { color: var(--muted); font-size: 12px; text-align: center; margin: 8px 0; }
+.links   { text-align: center; margin: 0 0 12px; font-size: 12px; }
+
+/* --- layout --------------------------------------------------------------- */
+
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.panel { min-width: 0; }
+.panel-controls { width: 340px; flex: 0 0 auto; }
+.panel-gradient { width: 400px; flex: 0 0 auto; }
+.panel-curve    { width: 640px; flex: 1 1 520px; max-width: 800px; }
+
+canvas { max-width: 100%; height: auto; display: block; }
+#gradient { border-radius: 4px; }
+#curve    { cursor: grab; touch-action: none; }
+
+/* --- generated controls --------------------------------------------------- */
+
+.group {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin: 0 0 12px;
+  padding: 8px 12px 12px;
+}
+
+.group legend {
+  padding: 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.row > label {
+  flex: 0 0 78px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.row.disabled { opacity: 0.4; pointer-events: none; }
+
+input, select, button {
+  font: inherit;
+  color: var(--ink);
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
+input[type="checkbox"] { flex: 0 0 auto; accent-color: var(--accent); margin: 0; }
+.row > input[type="checkbox"] + label { flex: 1 1 auto; }
+
+.num    { width: 62px; flex: 0 0 62px; text-align: right; }
+.slider { flex: 1 1 auto; min-width: 60px; padding: 0; background: none; border: none; accent-color: var(--accent); }
+
+select { flex: 1 1 auto; }
+
+button {
+  cursor: pointer;
+  padding: 5px 12px;
+  background: var(--field);
+}
+button:hover { border-color: var(--accent); color: var(--accent); }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+
+/* --- palette output ------------------------------------------------------- */
+
+/* Swatches and the export button live under the controls panel; the hex
+   listing lives under the 3-D canvas and spans its full width. */
+
+.palette-out {
+  margin-top: 20px;
+  padding-top: 0px;
+  /* border-top: 1px solid var(--line); */
+  text-align: center;
+}
+
+.swatches { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-bottom: 8px; }
+
+.swatch {
+  width: 34px; height: 34px;
+  border: 2px solid #fff;
+  border-radius: 6px;
+}
+
+
+/* --- transient status message (replaces alert()) -------------------------- */
+
+.status {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 12px);
+  padding: 8px 16px;
+  background: #222;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.status.show { opacity: 1; transform: translate(-50%, 0); }
+
+#footer {
+  position: fixed;
+  right: 24px;
+  bottom: 8px;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .panel-controls, .panel-gradient { width: 100%; }
+  #footer { position: static; text-align: right; margin-top: 24px; }
+}
+
+/* --- two-thumb sliders (src/rangepair.js) --------------------------------- */
+/* The widget skins these itself, so every rule here is scoped to `.row` — the
+   lab's control rows. Unscoped, `.rp-track { height: 6px }` reached into the
+   widget when a page happened to load both stylesheets and collapsed all of
+   its vertical sliders. Shared markup needs scoped CSS on both sides. */
+
+.row > .rp { flex: 1 1 auto; min-width: 60px; }
+
+.row .rp-h { position: relative; height: 20px; }
+
+.row .rp-track {
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  left: 8px; right: 8px; height: 6px;
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.row .rp-back { position: absolute; inset: 0; border-radius: 999px; overflow: hidden; }
+
+.row .rp-band {
+  position: absolute; top: 0; bottom: 0;
+  background: var(--accent);
+  opacity: 0.5;
+  cursor: grab;
+}
+.row .rp-band:active { cursor: grabbing; }
+
+.row .rp-thumb {
+  position: absolute;
+  top: 50%;
+  width: 14px; height: 14px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--field);
+  cursor: grab;
+  touch-action: none;
+}
+.row .rp-thumb:active { cursor: grabbing; }
+.row .rp-thumb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* One readout per end of the track, sitting at that end. */
+.pair-val {
+  flex: 0 0 34px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--accent);
+}
+.pair-lo { text-align: right; }
+.pair-hi { text-align: left; }
+
+/* --- one-line control rows (the export fields) ---------------------------- */
+
+.row-inline { gap: 12px; justify-content: flex-start; }
+
+.inline-field { display: flex; align-items: center; gap: 6px; }
+.inline-field > label { font-size: 13px; color: var(--muted); }
+.inline-num { width: 40px; flex: 0 0 40px; text-align: center; }
+
+/* The palette swatches sit at the foot of the control panel, so they take its
+   width rather than a canvas's. */
+.palette-out {
+  margin: 16px 0 0;
+  padding-top: 0;
+  border-top: 0;
+}

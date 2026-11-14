@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Palette picker widget — Parametric Curves in Color Space</title>
+  <link rel="stylesheet" href="../lib/applet.css">
+  <style>
+    /* This page is the HOST, not the widget: the widget brings its own styles
+       and everything below is only the demonstration around it. */
+    .host { display: flex; flex-wrap: wrap; gap: 32px; justify-content: center;
+            align-items: flex-start; }
+    .host-doc { width: 460px; max-width: 100%; }
+    .host-doc h3 { margin: 20px 0 6px; font-size: 13px; letter-spacing: .06em;
+                   text-transform: uppercase; color: var(--muted); }
+    .host-doc pre { background: var(--field); border: 1px solid var(--line);
+                    border-radius: 6px; padding: 10px 12px; overflow-x: auto;
+                    font-family: ui-monospace, Menlo, Consolas, monospace;
+                    font-size: 11.5px; line-height: 1.5; }
+    #applied { min-height: 62px; }
+    #applied .out-row { display: flex; flex-wrap: wrap; gap: 3px; margin: 6px 0; }
+    #applied .out-sw { width: 22px; height: 22px; border-radius: 4px;
+                       border: 1px solid rgba(255,255,255,.5); }
+    #applied code { font-size: 11px; color: var(--accent); word-break: break-all; }
+  </style>
+</head>
+<body>
+
+<main class="host">
+
+  <section class="host-doc">
+    <h2 style="text-align:left">Palette picker widget</h2>
+    <p class="links" style="text-align:left">
+      [<a href="index.html">the lab</a> &middot;
+      <a href="https://cheque.github.io/color-curves/" target="_blank" rel="noopener">cheque.github.io/color-curves</a>]
+    </p>
+
+    <p style="color:var(--muted);line-height:1.55">
+      The same curve model as the lab, with the controls a picker needs and
+      nothing else. Palettes are points on a continuous curve, so asking for
+      twelve colours instead of seven is the same palette sampled finer — which
+      is what the <em>colours</em> slider does.
+    </p>
+
+    <h3>Embedding</h3>
+<pre>&lt;script src="../lib/color.js"&gt;&lt;/script&gt;
+&lt;script src="src/curve.js"&gt;&lt;/script&gt;
+&lt;script src="../lib/reparam.js"&gt;&lt;/script&gt;
+&lt;script src="../lib/palette.js"&gt;&lt;/script&gt;
+&lt;script src="src/params.js"&gt;&lt;/script&gt;
+&lt;script src="../lib/rangepair.js"&gt;&lt;/script&gt;
+&lt;script src="src/widget.js"&gt;&lt;/script&gt;
+
+&lt;div id="picker"&gt;&lt;/div&gt;
+&lt;script&gt;
+  var picker = ColorCurves.mountPicker(
+    document.getElementById('picker'), {
+      onApply: function (palette) {
+        // palette is a plain JS array of hex strings
+        console.log(palette);   // ['#1b2a4a', '#2f5f7a', ...]
+      }
+    });
+&lt;/script&gt;</pre>
+    <p class="caption" style="text-align:left">
+      No stylesheet to link: the widget injects its own, scoped to
+      <code>.cc-widget</code>.
+    </p>
+
+    <h3>Handle</h3>
+<pre>picker.getPalette()   // ['#1b2a4a', ...]  — array of hex
+picker.getParams()    // the parameters that made it
+picker.getSource()    // a link that reopens exactly this curve
+picker.setParams({N: 3, shape: 'pcircle'})
+picker.destroy()</pre>
+
+    <h3>Or listen for the event</h3>
+<pre>el.addEventListener('colorcurves:apply', function (e) {
+  e.detail.palette;   // the same array
+});</pre>
+
+    <h3>Last applied</h3>
+    <div id="applied"><p class="caption" style="text-align:left">
+      Press <strong>APPLY PALETTE</strong> — what the callback receives appears here.
+    </p></div>
+  </section>
+
+  <section>
+    <div id="picker"></div>
+  </section>
+
+</main>
+
+<script src="../lib/color.js"></script>
+<script src="src/curve.js"></script>
+<script src="../lib/reparam.js"></script>
+<script src="../lib/palette.js"></script>
+<script src="src/params.js"></script>
+<script src="../lib/rangepair.js"></script>
+<script src="src/widget.js"></script>
+<script>
+// The host application: everything below is what an embedder writes.
+var out = document.getElementById('applied');
+
+var picker = ColorCurves.mountPicker(document.getElementById('picker'), {
+  onApply: function (palette, params) {
+    var row = palette.map(function (h) {
+      return '<span class="out-sw" style="background:' + h + '"></span>';
+    }).join('');
+    out.innerHTML =
+      '<div class="out-row">' + row + '</div>' +
+      '<code>' + JSON.stringify(palette) + '</code>' +
+      '<p class="caption" style="text-align:left">' + palette.length +
+      ' colours · <a href="' + picker.getSource() + '">reopen this curve</a></p>';
+  }
+});
+</script>
+
+</body>
+</html>
