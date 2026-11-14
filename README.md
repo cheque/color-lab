@@ -37,7 +37,8 @@ curves/                         0 · parametric curves and the palette-picker wi
 theory/                         1 · color models
 harmony/                        5 · placeholder page
 sampling/ analysis/ trajectories/   2–4 · placeholder pages
-docs/                           the review and specifications
+docs/                           the reviews and specifications
+references/                     every cited work in one list (downloaded copies stay local, not committed)
 legacy/colortheory/             the original color-model explorer, verbatim
 ```
 
