@@ -128,6 +128,13 @@ var PARAM_SPECS = [
     help: 'Do not clear the 3-D canvas between redraws, so successive curves pile ' +
           'up on top of each other. The Clear button empties it.'
   },
+  {
+    key: 'showCylinder', group: 'View', label: 'Show the cylinder', type: 'check', def: false,
+    view: true,
+    help: 'Draw the HSL cylinder as a wireframe behind the curve: the black and ' +
+          'white rims, the L = 0.5 equator, twelve lines of constant hue and the ' +
+          'lightness axis. Lines on the far side are fainter.'
+  },
 
   // --- export --------------------------------------------------------------
   {

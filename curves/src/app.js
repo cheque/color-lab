@@ -436,9 +436,20 @@ function drawGradient() {
 // `opts.clear` forces the wipe that the "Keep previous curves" checkbox
 // otherwise suppresses; it is what the Clear button uses.
 function drawCurve(opts) {
-  if (!P.accumulate || (opts && opts.clear)) { ctxC.clearRect(-2, -2, 4, 4); }
+  var cleared = !P.accumulate || (opts && opts.clear);
+  // The default frame fits the unit sphere. The cylinder's rims project up to
+  // sqrt(2) from the centre (cos ph + sin ph at ph = 1/8 turn), so showing it
+  // zooms out by that factor — a fixed scale, so dragging never makes it pulse.
+  var s = (CURVE_W / 2) * (P.showCylinder ? 0.875 / Math.SQRT2 : 0.875);
+  ctxC.setTransform(s, 0, 0, -s, CURVE_W / 2, CURVE_W / 2);
+  if (cleared) { ctxC.clearRect(-2, -2, 4, 4); }
 
   var basis = cameraBasis(camera);
+
+  // Behind the curve, so it never covers a colour. Only on a fresh canvas:
+  // with "Keep previous curves" on, its translucent lines would otherwise
+  // pile up and brighten on every redraw.
+  if (P.showCylinder && cleared) { drawCylinder(ctxC, basis); }
 
   strokeCurve(ctxC, projectAll(model.points, basis), model.colors, function (k) {
     return model.inSel[k] ? 0.022 : 0.008;

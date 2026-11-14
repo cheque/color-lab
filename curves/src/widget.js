@@ -324,7 +324,7 @@ function mountPicker(host, options) {
 
   var note = div('cc-note');
   note.innerHTML = '<a href="' + HOME + '" target="_blank" rel="noopener">' +
-                   'cheque.github.io/color-curves</a>';
+                   'cheque.github.io/color-lab/curves</a>';
   root.appendChild(note);
 
   host.appendChild(root);
