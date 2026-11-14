@@ -334,10 +334,46 @@
   }
 
   // --------------------------------------------------------------------------
+  //  5 · Harmony: a hue wheel with a triad and a complementary pair on it
+  // --------------------------------------------------------------------------
+  function paintHarmony(g) {
+    var ctx = g.ctx;
+    var R = g.h * 0.42, cx = g.w / 2, cy = g.h / 2, r0 = 0.62;
+    // The wheel: a ring of full hues around a disc that fades to gray.
+    pixels(g, cx - R, cy - R, 2 * R, 2 * R, function (u, v) {
+      var r = Math.hypot(u, v);
+      if (r > 1) { return null; }
+      var H = Math.atan2(v, u) / (2 * Math.PI);
+      var c = hsl2rgbF({H: H - Math.floor(H), S: r < r0 ? r / r0 : 1, L: 0.5});
+      var k = r < r0 ? 0.45 : 1;
+      return rgbClip({R: k * c.R + (1 - k) * 91, G: k * c.G + (1 - k) * 91, B: k * c.B + (1 - k) * 91});
+    });
+    function at(t, rr) {
+      var a = 2 * Math.PI * t;
+      return {x: cx + rr * R * Math.cos(a), y: cy - rr * R * Math.sin(a)};
+    }
+    function poly(ts, rr, dash, width) {
+      ctx.beginPath();
+      ts.forEach(function (t, i) { var p = at(t, rr); if (i) { ctx.lineTo(p.x, p.y); } else { ctx.moveTo(p.x, p.y); } });
+      if (ts.length > 2) { ctx.closePath(); }
+      ctx.setLineDash(dash); ctx.lineWidth = width; ctx.strokeStyle = '#fff'; ctx.stroke(); ctx.setLineDash([]);
+    }
+    var base = 0.04, triad = [base, base + 1 / 3, base + 2 / 3], comp = [base + 0.5 + 0.08, base + 0.5 - 0.08];
+    poly([comp[0], base, comp[1]], 0.81, [5, 5], 1.5);   // split complementary
+    poly(triad, 0.81, [], 2.5);                          // triad
+    triad.concat(comp).forEach(function (t, i) {
+      var p = at(t, 0.81), c = hsl2rgbF({H: t - Math.floor(t), S: 1, L: 0.5});
+      ctx.beginPath(); ctx.arc(p.x, p.y, i < 3 ? 9 : 6, 0, 2 * Math.PI);
+      ctx.fillStyle = 'rgb(' + rgbClip(c).R + ',' + rgbClip(c).G + ',' + rgbClip(c).B + ')';
+      ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
+    });
+  }
+
+  // --------------------------------------------------------------------------
 
   var PAINTERS = {
     curves: paintCurves, theory: paintTheory, sampling: paintSampling,
-    analysis: paintAnalysis, trajectories: paintTrajectories
+    analysis: paintAnalysis, trajectories: paintTrajectories, harmony: paintHarmony
   };
 
   function paintAll() {

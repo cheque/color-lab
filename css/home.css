@@ -72,8 +72,8 @@ main{max-width:72rem;width:100%;margin:0 auto;padding:0 clamp(1rem,4vw,2.5rem);f
 .app-extra:hover{text-decoration:underline;text-underline-offset:.2em}
 
 /* in the workshop: the same cards, with a dashed frame and a quieter picture */
-.apps.soon .app canvas{border-style:dashed;filter:saturate(.75)}
-.apps.soon .app:hover canvas{filter:none}
+.apps.soon .app canvas,.apps .soon .app canvas{border-style:dashed;filter:saturate(.75)}
+.apps.soon .app:hover canvas,.apps .soon .app:hover canvas{filter:none}
 
 /* ---------------------------------------------------------------- footer */
 .foot{
