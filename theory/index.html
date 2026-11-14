@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Colour Models — Color Lab</title>
+  <link rel="icon" href="https://cheque.github.io/assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../lib/applet.css">
+  <link rel="stylesheet" href="theory.css">
+</head>
+<body>
+
+<main class="layout">
+
+  <!-- ---------------- controls and readouts ---------------- -->
+  <section class="panel panel-controls">
+    <h2>Colour Models</h2>
+    <a href="https://cheque.github.io/"><p class="caption">Cheque Soto</p></a>
+    <p class="links">[<a href="../index.html">Color Lab</a> &middot;
+      <a href="https://github.com/cheque/color-lab" target="_blank" rel="noopener">github</a>]</p>
+
+    <div class="current">
+      <div id="swatch" class="big-swatch" aria-label="Selected colour"></div>
+      <div class="current-side">
+        <input type="text" id="hex" class="hex" spellcheck="false" maxlength="7" aria-label="Hex code">
+        <p id="gamutNote" class="caption warn" hidden>clipped to the sRGB gamut</p>
+      </div>
+    </div>
+
+    <fieldset class="group">
+      <legend>sRGB</legend>
+      <div id="rgbRows"></div>
+    </fieldset>
+
+    <fieldset class="group">
+      <legend>Reference white</legend>
+      <div class="row">
+        <select id="ref" aria-label="Tristimulus reference"></select>
+      </div>
+      <p class="caption left">10° observer (CIE 1964). The XYZ of an sRGB colour is fixed by sRGB's own
+        D65 white; the reference only changes how L*a*b* normalises it, with no chromatic adaptation.</p>
+    </fieldset>
+
+    <fieldset class="group">
+      <legend>The same colour, in every model</legend>
+      <table class="readout" id="readout"></table>
+      <p class="caption left">HSL, L*a*b* and L*C*h° are editable. Hue in HSL is a turn (0–1), as in the curves
+        instrument; h° in L*C*h° is in degrees.</p>
+    </fieldset>
+
+    <div class="actions">
+      <button type="button" id="random">Random</button>
+      <button type="button" id="sample">Sample this colour</button>
+      <button type="button" id="permalink">Copy link</button>
+    </div>
+  </section>
+
+  <!-- ---------------- HSL ---------------- -->
+  <section class="panel panel-plane">
+    <div class="plane">
+      <canvas id="hsl" aria-label="HSL disc at constant lightness: drag to choose hue and saturation"></canvas>
+      <canvas id="hslBar" class="bar" aria-label="HSL lightness: drag to choose"></canvas>
+    </div>
+    <p class="caption">(H, S) disc at constant L &middot; L profile</p>
+  </section>
+
+  <!-- ---------------- CIE L*a*b* ---------------- -->
+  <section class="panel panel-plane">
+    <div class="plane">
+      <canvas id="lab" aria-label="a*b* plane at constant L*: drag to choose a* and b*"></canvas>
+      <canvas id="labBar" class="bar" aria-label="CIE lightness: drag to choose"></canvas>
+    </div>
+    <p class="caption">(a*, b*) plane at constant L* &middot; L* profile</p>
+    <div class="row center">
+      <input type="checkbox" id="gamut" checked>
+      <label for="gamut">Restrict to the sRGB gamut</label>
+    </div>
+  </section>
+
+  <!-- ---------------- palette ---------------- -->
+  <section class="panel panel-palette">
+    <fieldset class="group">
+      <legend>Palette</legend>
+      <div id="palette" class="palette-strip" aria-live="polite"></div>
+      <p id="paletteHint" class="caption left">Press <strong>Sample this colour</strong> to collect it here.
+        Drag swatches to reorder, click one to load it, × to remove it. The number between two swatches is their
+        CIEDE2000 difference.</p>
+      <div class="actions" id="exportButtons"></div>
+    </fieldset>
+  </section>
+
+</main>
+
+<div id="status" class="status" role="status" aria-live="polite"></div>
+
+<footer id="footer">
+  <a href="../index.html">&larr; Color Lab</a>
+</footer>
+
+<script src="../lib/color.js"></script>
+<script src="../lib/palette.js"></script>
+<script src="src/app.js"></script>
+
+</body>
+</html>

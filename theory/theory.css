@@ -1,0 +1,72 @@
+/* theory.css — layout of the colour-model explorer. Tokens and controls come from lib/applet.css
+   (color-curves' stylesheet), so this file only places things. */
+
+.panel-controls { width: 340px; flex: 0 0 auto; }
+.panel-plane    { flex: 0 0 auto; }
+.panel-palette  { flex: 1 1 100%; max-width: 1180px; }
+
+.caption.left { text-align: left; }
+.caption.warn { color: #ffd166; margin: 4px 0 0; text-align: left; }
+.row.center   { justify-content: center; }
+
+/* the selected colour */
+.current { display: flex; gap: 12px; align-items: center; margin: 0 0 12px; }
+.big-swatch {
+  flex: 0 0 96px; height: 64px;
+  border: 3px solid #fff; border-radius: 8px;
+}
+.current-side { flex: 1 1 auto; }
+.hex {
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 18px; text-transform: uppercase; text-align: center;
+  padding: 6px;
+}
+.hex.bad { border-color: #ff6b6b; }
+
+/* readout table: one row per model, three editable numbers each */
+.readout { width: 100%; border-collapse: collapse; font-size: 12px; }
+.readout th {
+  text-align: left; font-weight: 400; color: var(--muted);
+  padding: 4px 6px 4px 0; white-space: nowrap; width: 58px;
+}
+.readout td { padding: 2px; }
+.readout td span { display: block; font-size: 10px; color: var(--muted); }
+.readout input {
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px; text-align: right;
+}
+.readout input[readonly] { background: transparent; border-color: transparent; color: var(--muted); }
+
+/* the two planes, each with its lightness bar */
+.plane { display: flex; gap: 20px; align-items: flex-start; }
+.plane canvas { touch-action: none; cursor: crosshair; }
+.plane canvas.bar { cursor: ns-resize; border-radius: 4px; }
+
+/* palette strip */
+.palette-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; min-height: 64px; }
+.chip {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 6px; border-radius: 8px; background: var(--field);
+  cursor: grab; user-select: none;
+}
+.chip.dragging { opacity: 0.4; }
+.chip.over { outline: 2px dashed var(--accent); }
+.chip .sw { width: 44px; height: 44px; border: 2px solid #fff; border-radius: 6px; }
+.chip code { font-size: 10px; color: var(--muted); }
+.chip .x {
+  position: absolute; top: -6px; right: -6px;
+  width: 18px; height: 18px; padding: 0; line-height: 14px;
+  border-radius: 50%; font-size: 12px;
+}
+.de {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px; color: var(--accent); padding: 0 4px;
+}
+
+@media (max-width: 900px) {
+  .panel-controls { width: 100%; }
+  .plane { justify-content: center; }
+}
