@@ -17,7 +17,7 @@ A web page holding several color instruments; published at https://cheque.github
 - Curves parameters: add one entry to `PARAM_SPECS` in `curves/src/params.js`; UI and permalink follow.
 
 ## Status (2026-11-13)
-0 curves (+ "Show the cylinder" wireframe) and 1 color models are built. Color models: six cuts in a CUTS table (theory/src/app.js), 3-D in theory/src/solids.js (WebGL with depth buffer, painter's fallback; cuts opaque, solid translucent). 2 sampling has a literature
+0 curves (+ "Show the cylinder" wireframe) and 1 color models are built. Color models: nine cuts (RGB, HSL, Lab) in a CUTS table (theory/src/app.js), 3-D in theory/src/solids.js (RGB cube stood on its gray diagonal) (WebGL with depth buffer, painter's fallback; cuts opaque, solid translucent). 2 sampling has a literature
 review, 3 analysis and 4 random flights have specifications, all in `docs/`, each ending with questions for
 the owner. Answer those before building.
 

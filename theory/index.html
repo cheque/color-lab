@@ -10,58 +10,21 @@
 </head>
 <body>
 
+<header class="theory-head">
+  <h2>Color Models</h2>
+  <p class="links"><a href="https://cheque.github.io/">Cheque Soto</a> &middot; <a href="../index.html">Color Lab</a> &middot;
+    <a href="https://github.com/cheque/color-lab" target="_blank" rel="noopener">github</a></p>
+</header>
+
 <main class="layout">
 
-  <!-- ---------------- the color, its numbers ---------------- -->
-  <section class="panel panel-controls">
-    <h2>Color Models</h2>
-    <a href="https://cheque.github.io/"><p class="caption">Cheque Soto</p></a>
-    <p class="links">[<a href="../index.html">Color Lab</a> &middot;
-      <a href="https://github.com/cheque/color-lab" target="_blank" rel="noopener">github</a>]</p>
-
-    <div class="current">
-      <div id="swatch" class="big-swatch" aria-label="Selected color"></div>
-      <div class="current-side">
-        <input type="text" id="hex" class="hex" spellcheck="false" maxlength="7" aria-label="Hex code">
-        <p id="gamutNote" class="caption warn" hidden>clipped to the sRGB gamut</p>
-      </div>
-    </div>
-
-    <fieldset class="group">
-      <legend>sRGB</legend>
-      <div id="rgbRows"></div>
-    </fieldset>
-
-    <fieldset class="group">
-      <legend>The same color, in every model</legend>
-      <table class="readout" id="readout"></table>
-      <p class="caption left">HSL, L*a*b* and L*C*h° are editable. Hue in HSL is a turn (0–1), as in the curves
-        instrument; h° in L*C*h° is in degrees.</p>
-    </fieldset>
-
-    <fieldset class="group">
-      <legend>Reference white</legend>
-      <div class="row">
-        <select id="ref" aria-label="Tristimulus reference"></select>
-      </div>
-      <div class="row">
-        <input type="checkbox" id="gamut" checked>
-        <label for="gamut">Restrict L*a*b* to the sRGB gamut</label>
-      </div>
-      <p class="caption left">10° observer (CIE 1964). The XYZ of an sRGB color is fixed by sRGB's own
-        D65 white; the reference only changes how L*a*b* normalizes it, with no chromatic adaptation.</p>
-    </fieldset>
-
-    <div class="actions">
-      <button type="button" id="random">Random</button>
-      <button type="button" id="sample">Sample this color</button>
-      <button type="button" id="permalink">Copy link</button>
-    </div>
-  </section>
-
-  <!-- ---------------- the six plane cuts ---------------- -->
+  <!-- ---------------- the nine plane cuts, and the color under them ---------------- -->
   <section class="panel panel-cuts">
     <div class="cut-cols">
+      <div class="cut-col">
+        <h3 class="cuts-head">RGB</h3>
+        <div class="cuts" id="cutsRGB"></div>
+      </div>
       <div class="cut-col">
         <h3 class="cuts-head">HSL</h3>
         <div class="cuts" id="cutsHSL"></div>
@@ -72,6 +35,36 @@
       </div>
     </div>
     <p class="caption">Each cut holds one coordinate fixed; drag inside it to move the color within that plane.</p>
+
+    <div class="current-bar">
+      <div class="current">
+        <div id="swatch" class="big-swatch" aria-label="Selected color"></div>
+        <div class="current-side">
+          <input type="text" id="hex" class="hex" spellcheck="false" maxlength="7" aria-label="Hex code">
+          <p id="gamutNote" class="caption warn" hidden>clipped to the sRGB gamut</p>
+        </div>
+        <p id="readline" class="readline" aria-live="polite"></p>
+      </div>
+
+      <div class="reference">
+        <div class="row">
+          <label for="ref">reference white</label>
+          <select id="ref" aria-label="Tristimulus reference"></select>
+        </div>
+        <div class="row">
+          <input type="checkbox" id="gamut" checked>
+          <label for="gamut">Restrict L*a*b* to the sRGB gamut</label>
+        </div>
+        <p class="caption left">10° observer (CIE 1964). XYZ is fixed by sRGB's own D65 white; the reference only
+          changes how L*a*b* normalizes it, with no chromatic adaptation.</p>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="random">Random</button>
+        <button type="button" id="sample">Sample this color</button>
+        <button type="button" id="permalink">Copy link</button>
+      </div>
+    </div>
   </section>
 
   <!-- ---------------- one solid, in 3-D ---------------- -->
@@ -84,6 +77,7 @@
       <legend>Solid</legend>
       <div class="row">
         <select id="space" aria-label="Solid shown">
+          <option value="rgb">RGB cube</option>
           <option value="hsl">HSL cylinder</option>
           <option value="lab">L*a*b*: the sRGB gamut</option>
         </select>
@@ -93,8 +87,9 @@
         <input type="range" id="opacity" class="slider" min="0" max="0.6" step="0.01" value="0.14">
       </div>
       <div class="cut-toggles" id="cutToggles"></div>
-      <p class="caption left">Cuts of the space shown are flat. The other space's cuts are carried over point by
-        point by the color conversion, and arrive curved.</p>
+      <p class="caption left">Cuts of the space shown are flat. The other spaces' cuts are carried over point by
+        point by the color conversion, and arrive curved. The cube stands on its black–white diagonal, red at hue 0,
+        so lightness points up in all three solids.</p>
       <p class="caption left">Drag to rotate · shift-drag or right-drag to pan · wheel to zoom · double-click to reset.</p>
     </fieldset>
   </section>

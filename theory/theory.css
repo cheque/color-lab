@@ -2,18 +2,34 @@
    (color-curves' stylesheet), so this file only places things. The three panels (numbers, cuts, solid)
    sit as one centered block; the palette runs full width beneath them. */
 
-.layout { max-width: 1620px; margin: 0 auto; }
-.panel-controls { width: 330px; flex: 0 0 auto; }
-.panel-cuts     { flex: 0 0 auto; }
+.layout { max-width: 1500px; margin: 0 auto; }
+.panel-cuts     { flex: 0 0 auto; width: 664px; }
+
+/* title row */
+.theory-head { display: flex; align-items: baseline; justify-content: center; gap: 18px; margin: 0 0 14px; }
+.theory-head h2 { margin: 0; font-size: 24px; }
+.theory-head .links { margin: 0; }
 .panel-solid    { width: 630px; flex: 0 0 auto; }
 
 .caption.left { text-align: left; }
 .caption.warn { color: #ffd166; margin: 4px 0 0; text-align: left; }
 
-/* the selected color */
-.current { display: flex; gap: 12px; align-items: center; margin: 0 0 12px; }
+/* under the cuts: the color, the reference white, the actions */
+.current-bar {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; align-items: start;
+  border-top: 1px solid var(--line); padding-top: 14px; margin-top: 6px;
+}
+.current-bar .current { grid-column: 1 / -1; }
+.current-bar .actions { justify-content: flex-start; margin: 0; align-self: end; }
+.current { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .big-swatch { flex: 0 0 96px; height: 64px; border: 3px solid #fff; border-radius: 8px; }
-.current-side { flex: 1 1 auto; }
+.current-side { flex: 0 0 160px; }
+.readline {
+  flex: 1 1 300px; margin: 0; display: flex; flex-wrap: wrap; gap: 2px 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; color: var(--muted);
+}
+.readline b { color: var(--ink); font-weight: 600; font-family: system-ui, sans-serif; }
+.reference .row > label { flex: 0 0 auto; }
 .hex {
   width: 100%;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -34,7 +50,7 @@
 .readout input[readonly] { background: transparent; border-color: transparent; color: var(--muted); }
 
 /* the six cuts: one column per model, three cuts each */
-.cut-cols { display: flex; gap: 24px; align-items: flex-start; }
+.cut-cols { display: flex; gap: 32px; align-items: flex-start; justify-content: center; }
 .cuts-head {
   font-size: 20px; font-weight: 600; letter-spacing: .02em; color: var(--ink);
   margin: 0 0 10px; text-align: center;
@@ -58,7 +74,7 @@
 .cut-toggles input { accent-color: var(--accent); }
 
 /* palette, full width at the foot */
-.palette-bar { max-width: 1620px; margin: 8px auto 0; }
+.palette-bar { max-width: 1500px; margin: 8px auto 0; }
 .palette-row { display: flex; align-items: center; gap: 16px; }
 .palette-strip {
   flex: 1 1 auto; display: flex; flex-wrap: nowrap; align-items: center; gap: 2px;
@@ -82,7 +98,8 @@
 .de { flex: 0 0 auto; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10px; color: var(--accent); padding: 0 4px; }
 
 @media (max-width: 900px) {
-  .panel-controls, .panel-solid { width: 100%; }
+  .panel-cuts, .panel-solid { width: 100%; }
+  .current-bar { grid-template-columns: 1fr; }
   .solid-stack { width: 100%; height: auto; aspect-ratio: 1; }
   .cut-cols { width: 100%; }
   .cut-col { flex: 1 1 0; min-width: 0; }

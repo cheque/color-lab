@@ -1,7 +1,8 @@
 // ============================================================================
 //  theory/src/solids.js — the color solids and their plane cuts, in 3-D
 //
-//  Two solids can be shown, one at a time:
+//  Three solids can be shown, one at a time:
+//    rgb  the RGB cube on its black–white diagonal (posRGB below)
 //    hsl  the HSL cylinder:      x = S cos 2πH, y = S sin 2πH, z = 2L − 1
 //    lab  the sRGB gamut inside CIE L*a*b*:  x = a*/AB, y = b*/AB, z = L*/50 − 1
 //
@@ -36,8 +37,22 @@ var Solids = (function () {
   }
   function posLab(l) { return {x: l.a / AB, y: l.b / AB, z: l.L / 50 - 1}; }
 
+  // The RGB cube stood on its black–white diagonal: z along (1,1,1), red's
+  // direction as +x (hue 0, as in HSL), green at +120°. With the cube's center
+  // at the origin, black lands at z = -1, white at z = +1 and every corner on
+  // the unit sphere, so it fits the view like the other two solids.
+  var E1 = [2 / Math.sqrt(6), -1 / Math.sqrt(6), -1 / Math.sqrt(6)];
+  var E2 = [0, 1 / Math.SQRT2, -1 / Math.SQRT2];
+  var E3 = [1 / Math.sqrt(3), 1 / Math.sqrt(3), 1 / Math.sqrt(3)];
+  function posRGB(c) {
+    var v = [2 * c.R / 255 - 1, 2 * c.G / 255 - 1, 2 * c.B / 255 - 1], k = 1 / Math.sqrt(3);
+    function dot(e) { return e[0] * v[0] + e[1] * v[1] + e[2] * v[2]; }
+    return {x: k * dot(E1), y: k * dot(E2), z: k * dot(E3)};
+  }
+
   // Where an (unclipped, in-gamut) sRGB color sits in a space.
   function posOfRGB(space, c, ref) {
+    if (space === 'rgb') { return posRGB(c); }
     if (space === 'hsl') { return posHSL(rgb2hsl(c.R, c.G, c.B)); }
     return posLab(rgb2cielab(c.R, c.G, c.B, ref));
   }
@@ -46,6 +61,7 @@ var Solids = (function () {
   // Its sRGB color, or null when it has none (Lab outside the gamut).
   function rgbOfSample(smp, ref) {
     if (!smp) { return null; }
+    if (smp.rgb) { return smp.rgb; }
     if (smp.hsl) { return hsl2rgbF(smp.hsl); }
     var c = cielab2rgbF(smp.lab, ref);
     return inGamut(c, 0.5) ? c : null;
@@ -76,9 +92,11 @@ var Solids = (function () {
     return {quads: quads};
   }
 
-  // The sRGB gamut in L*a*b*: the image of the RGB cube's six faces.
-  function solidLab(ref) {
-    var quads = [], N = SOLID_N;
+  // The RGB cube's six faces, placed in `space`: the cube itself, or its
+  // image (the sRGB gamut) in L*a*b*. In the cube the faces are flat and
+  // their colors linear, so a coarse grid is exact.
+  function cubeFaces(space, ref, N) {
+    var quads = [];
     for (var axis = 0; axis < 3; axis++) {
       [0, 255].forEach(function (fixed) {
         function rgbAt(u, v) {
@@ -90,13 +108,16 @@ var Solids = (function () {
           for (var j = 0; j < N; j++) {
             var cs = [rgbAt(i / N, j / N), rgbAt((i + 1) / N, j / N),
                       rgbAt((i + 1) / N, (j + 1) / N), rgbAt(i / N, (j + 1) / N)];
-            quads.push({p: cs.map(function (c) { return posOfRGB('lab', c, ref); }), c: cs});
+            quads.push({p: cs.map(function (c) { return posOfRGB(space, c, ref); }), c: cs});
           }
         }
       });
     }
     return {quads: quads};
   }
+
+  function solidLab(ref) { return cubeFaces('lab', ref, SOLID_N); }
+  function solidRGB() { return cubeFaces('rgb', null, 4); }
 
   // Wireframes as polylines: [{pts: [...], rgba: [r,g,b,a]}].
   function wireHSL() {
@@ -117,8 +138,11 @@ var Solids = (function () {
     return lines;
   }
 
-  // The twelve edges of the RGB cube, carried into L*a*b*: the gamut's outline.
-  function wireLab(ref) {
+  // The twelve edges of the RGB cube, in the cube or carried into L*a*b*
+  // (the gamut's outline), and the gray axis.
+  function wireLab(ref) { return cubeWire('lab', ref); }
+  function wireRGB() { return cubeWire('rgb', null); }
+  function cubeWire(space, ref) {
     var corners = [], lines = [];
     for (var k = 0; k < 8; k++) { corners.push([(k & 1) ? 255 : 0, (k & 2) ? 255 : 0, (k & 4) ? 255 : 0]); }
     for (var a = 0; a < 8; a++) {
@@ -129,7 +153,7 @@ var Solids = (function () {
         var pts = [];
         for (var s = 0; s <= 32; s++) {
           var f = s / 32, c = corners[a], d = corners[b];
-          pts.push(posOfRGB('lab', {R: c[0] + (d[0] - c[0]) * f, G: c[1] + (d[1] - c[1]) * f,
+          pts.push(posOfRGB(space, {R: c[0] + (d[0] - c[0]) * f, G: c[1] + (d[1] - c[1]) * f,
                                     B: c[2] + (d[2] - c[2]) * f}, ref));
         }
         lines.push({pts: pts, rgba: [1, 1, 1, 0.38]});
@@ -162,7 +186,8 @@ var Solids = (function () {
     function vertex(s, t) {
       var smp = cut.sample3d(s, t, val), c = rgbOfSample(smp, ref);
       if (!c) { return null; }
-      var p = (cut.space === view) ? (smp.hsl ? posHSL(smp.hsl) : posLab(smp.lab)) : posOfRGB(view, c, ref);
+      var p = (cut.space !== view) ? posOfRGB(view, c, ref)
+            : smp.rgb ? posRGB(smp.rgb) : smp.hsl ? posHSL(smp.hsl) : posLab(smp.lab);
       return {p: p, c: c};
     }
     return cut.space === 'lab' ? polarMesh(vertex) : gridMesh(vertex, CUT_N);
@@ -267,8 +292,15 @@ var Solids = (function () {
     }
     ctx.font = (11 * dpr) + 'px system-ui, sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    var corner = function (r, g, b, name) {
+      var p = posRGB({R: r, G: g, B: b});
+      return [{x: p.x * 1.08, y: p.y * 1.08, z: p.z * 1.08}, name];
+    };
     var labels = scene.view === 'lab'
       ? [[{x: 1.05, y: 0, z: 0}, '+a*'], [{x: 0, y: 1.05, z: 0}, '+b*'], [{x: 0, y: 0, z: 1.1}, 'L*']]
+      : scene.view === 'rgb'
+      ? [corner(255, 0, 0, 'R'), corner(0, 255, 0, 'G'), corner(0, 0, 255, 'B'), corner(0, 255, 255, 'C'),
+         corner(255, 0, 255, 'M'), corner(255, 255, 0, 'Y'), corner(255, 255, 255, 'W'), corner(0, 0, 0, 'K')]
       : [[{x: 1.08, y: 0, z: 1}, 'H = 0'], [{x: 0, y: 0, z: 1.1}, 'L']];
     labels.forEach(function (lbl) {
       var q = toScreen(lbl[0], basis, W, H, camera);
@@ -428,8 +460,9 @@ var Solids = (function () {
   }
 
   return {
-    AB: AB, posHSL: posHSL, posLab: posLab, posOfRGB: posOfRGB,
-    solidHSL: solidHSL, solidLab: solidLab, wireHSL: wireHSL, wireLab: wireLab,
+    AB: AB, posRGB: posRGB, posHSL: posHSL, posLab: posLab, posOfRGB: posOfRGB,
+    solidRGB: solidRGB, solidHSL: solidHSL, solidLab: solidLab,
+    wireRGB: wireRGB, wireHSL: wireHSL, wireLab: wireLab,
     buildCut: buildCut, createGL: createGL, drawPainter: drawPainter, drawOverlay: drawOverlay
   };
 })();

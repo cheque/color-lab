@@ -5,12 +5,14 @@
 //  legacy/colortheory/) on the shared, tested lib/color.js.
 //
 //  One color, every model at once:
-//    - numbers: sRGB, hex, XYZ, HSL, L*a*b*, L*C*h°, all but XYZ editable;
-//    - six plane cuts through the current color, each a drag surface: HSL at
-//      constant L, H and S; L*a*b* at constant L*, a* and b*;
-//    - one solid in 3-D (the HSL cylinder or the sRGB gamut in L*a*b*), drawn
-//      translucent, with any of the six cuts: flat in their own space, carried
-//      over (and curved) in the other;
+//    - nine plane cuts through the current color, each a drag surface: RGB at
+//      constant R, G and B; HSL at constant L, H and S; L*a*b* at constant
+//      L*, a* and b*;
+//    - under them the color itself (swatch, editable hex, its numbers in every
+//      model), the reference white and the actions;
+//    - one solid in 3-D (the RGB cube, the HSL cylinder or the sRGB gamut in
+//      L*a*b*), drawn translucent, with any of the nine cuts: flat in their own
+//      space, carried over (and curved) in the others;
 //    - a palette collected by sampling, with CIEDE2000 between neighbors.
 //
 //  Every cut is one row of the CUTS table below. The 2-D view, the 3-D mesh,
@@ -65,11 +67,11 @@
   function fmt(v, d) { return (+v).toFixed(d); }
 
   // --------------------------------------------------------------------------
-  //  The six cuts
+  //  The nine cuts
   //
   //  current(state)   the cut's fixed coordinate for the current color
   //  sample(u, v, k)  the cut's point at 2-D position u, v in [0,1] (v up),
-  //                   for fixed value k: {hsl: …} or {lab: …}, or null outside
+  //                   for fixed value k: {rgb: …}, {hsl: …} or {lab: …}, or null outside
   //  sample3d(s,t,k)  the same, on the grid used for the 3-D mesh (the disc is
   //                   gridded in polar coordinates so its rim is round)
   //  mark(state, k)   where the current color sits, as {u, v}
@@ -77,6 +79,35 @@
   // --------------------------------------------------------------------------
 
   var CUTS = [
+    // RGB: the cube cut parallel to a face. Each is a square of the other two
+    // channels (0–255), the fixed one as given.
+    {
+      id: 'rgbR', space: 'rgb', name: 'R', axes: 'G → · B ↑',
+      current: function () { return state.rgb.R; },
+      label: function (k) { return 'R = ' + Math.round(k); },
+      sample: function (u, v, k) { return {rgb: {R: k, G: 255 * u, B: 255 * v}}; },
+      sample3d: function (s, t, k) { return this.sample(s, t, k); },
+      mark: function () { return {u: state.rgb.G / 255, v: state.rgb.B / 255}; },
+      pick: function (u, v, k) { fromRGB({R: Math.round(k), G: Math.round(255 * u), B: Math.round(255 * v)}); }
+    },
+    {
+      id: 'rgbG', space: 'rgb', name: 'G', axes: 'R → · B ↑',
+      current: function () { return state.rgb.G; },
+      label: function (k) { return 'G = ' + Math.round(k); },
+      sample: function (u, v, k) { return {rgb: {R: 255 * u, G: k, B: 255 * v}}; },
+      sample3d: function (s, t, k) { return this.sample(s, t, k); },
+      mark: function () { return {u: state.rgb.R / 255, v: state.rgb.B / 255}; },
+      pick: function (u, v, k) { fromRGB({R: Math.round(255 * u), G: Math.round(k), B: Math.round(255 * v)}); }
+    },
+    {
+      id: 'rgbB', space: 'rgb', name: 'B', axes: 'R → · G ↑',
+      current: function () { return state.rgb.B; },
+      label: function (k) { return 'B = ' + Math.round(k); },
+      sample: function (u, v, k) { return {rgb: {R: 255 * u, G: 255 * v, B: k}}; },
+      sample3d: function (s, t, k) { return this.sample(s, t, k); },
+      mark: function () { return {u: state.rgb.R / 255, v: state.rgb.G / 255}; },
+      pick: function (u, v, k) { fromRGB({R: Math.round(255 * u), G: Math.round(255 * v), B: Math.round(k)}); }
+    },
     {
       id: 'hslL', space: 'hsl', name: 'L', axes: 'hue around · S outward',
       current: function () { return state.hsl.L; },
@@ -255,12 +286,12 @@
   var cutEls = {};
 
   CUTS.forEach(function (cut) {
-    var canvas = el('canvas', {'aria-label': (cut.space === 'hsl' ? 'HSL' : 'L*a*b*') + ' cut at constant ' +
+    var canvas = el('canvas', {'aria-label': {rgb: 'RGB', hsl: 'HSL', lab: 'L*a*b*'}[cut.space] + ' cut at constant ' +
                                              cut.name + ': drag to choose the other two coordinates'});
     canvas.width = Math.round(CUT_PX * DPR);
     canvas.height = Math.round(CUT_PX * DPR);
     var cap = el('figcaption');
-    $(cut.space === 'hsl' ? 'cutsHSL' : 'cutsLab').appendChild(el('figure', {class: 'cut'}, [canvas, cap]));
+    $({rgb: 'cutsRGB', hsl: 'cutsHSL', lab: 'cutsLab'}[cut.space]).appendChild(el('figure', {class: 'cut'}, [canvas, cap]));
     cutEls[cut.id] = {canvas: canvas, cap: cap, key: null, bg: null};
 
     function local(e) {
@@ -301,7 +332,8 @@
     for (var j = 0; j < RES; j++) {
       for (var i = 0; i < RES; i++) {
         var smp = cut.sample((i + 0.5) / RES, 1 - (j + 0.5) / RES, k), c = null;
-        if (smp && smp.hsl) { c = hsl2rgb(smp.hsl); }
+        if (smp && smp.rgb) { c = rgbClip(smp.rgb); }
+        else if (smp && smp.hsl) { c = hsl2rgb(smp.hsl); }
         else if (smp) {
           var f = cielab2rgbF(smp.lab, ref);
           c = (gam && !inGamut(f)) ? null : rgbClip(f);
@@ -361,8 +393,9 @@
   function solidMesh() {
     var key = [state.view, state.ref].join(',');
     if (meshCache.solidKey !== key) {
-      meshCache.solid = swap(meshCache.solid, state.view === 'hsl' ? Solids.solidHSL() : Solids.solidLab(refWhite()));
-      meshCache.wire = swap(meshCache.wire, state.view === 'hsl' ? Solids.wireHSL() : Solids.wireLab(refWhite()));
+      var ref = refWhite();
+      meshCache.solid = swap(meshCache.solid, {rgb: Solids.solidRGB, hsl: Solids.solidHSL, lab: Solids.solidLab}[state.view](ref));
+      meshCache.wire = swap(meshCache.wire, {rgb: Solids.wireRGB, hsl: Solids.wireHSL, lab: Solids.wireLab}[state.view](ref));
       meshCache.solidKey = key;
     }
     return meshCache.solid;
@@ -451,7 +484,7 @@
   var toggleEls = {};
   (function () {
     var root = $('cutToggles');
-    [['hsl', 'HSL'], ['lab', 'L*a*b*']].forEach(function (sp) {
+    [['rgb', 'RGB'], ['hsl', 'HSL'], ['lab', 'L*a*b*']].forEach(function (sp) {
       root.appendChild(el('span', {class: 'head', text: sp[1]}));
       CUTS.filter(function (c) { return c.space === sp[0]; }).forEach(function (cut) {
         var box = el('input', {type: 'checkbox', id: 'show-' + cut.id});
@@ -465,21 +498,6 @@
   // --------------------------------------------------------------------------
   //  Numbers
   // --------------------------------------------------------------------------
-
-  var rgbEls = {};
-  ['R', 'G', 'B'].forEach(function (ch) {
-    var num = el('input', {type: 'number', class: 'num', min: 0, max: 255, step: 1, id: 'rgb' + ch});
-    var sl = el('input', {type: 'range', class: 'slider', min: 0, max: 255, step: 1, 'aria-label': ch});
-    function set(v) {
-      var c = {R: state.rgb.R, G: state.rgb.G, B: state.rgb.B};
-      c[ch] = clip(Math.round(+v || 0), 0, 255);
-      fromRGB(c);
-    }
-    num.addEventListener('input', function () { set(num.value); });
-    sl.addEventListener('input', function () { set(sl.value); });
-    rgbEls[ch] = {num: num, slider: sl};
-    $('rgbRows').appendChild(el('div', {class: 'row'}, [el('label', {for: 'rgb' + ch, text: ch}), num, sl]));
-  });
 
   var hexEl = $('hex');
   hexEl.addEventListener('input', function () {
@@ -496,36 +514,6 @@
     fromRGB(state.rgb);   // the stimulus stays; its L*a*b* description changes
   });
 
-  var MODELS = [
-    {name: 'XYZ', fields: [['X', '', 2], ['Y', '', 2], ['Z', '', 2]], edit: null},
-    {name: 'HSL', fields: [['H', 'turn', 4, 0.001], ['S', '0–1', 4, 0.001], ['L', '0–1', 4, 0.001]],
-     edit: function (v) { fromHSL({H: v.H, S: v.S, L: v.L}); }},
-    {name: 'L*a*b*', fields: [['L', 'L*', 2, 0.1], ['a', 'a*', 2, 0.1], ['b', 'b*', 2, 0.1]],
-     edit: function (v) { fromLab({L: v.L, a: v.a, b: v.b}); }},
-    {name: 'L*C*h°', fields: [['L', 'L*', 2, 0.1], ['C', 'C*', 2, 0.1], ['H', 'h°', 2, 0.1]],
-     edit: function (v) { fromLab(cielch2cielab({L: v.L, C: v.C, H: v.H})); }}
-  ];
-  var readEls = {};
-  MODELS.forEach(function (m) {
-    var tr = el('tr', {}, [el('th', {text: m.name})]);
-    readEls[m.name] = {};
-    m.fields.forEach(function (f) {
-      var inp = el('input', {type: m.edit ? 'number' : 'text', step: f[3] || 'any',
-                             'aria-label': m.name + ' ' + (f[1] || f[0])});
-      if (!m.edit) { inp.readOnly = true; }
-      readEls[m.name][f[0]] = inp;
-      tr.appendChild(el('td', {}, [inp, el('span', {text: f[1] || f[0]})]));
-      if (m.edit) {
-        inp.addEventListener('change', function () {
-          var v = {};
-          m.fields.forEach(function (g) { v[g[0]] = parseFloat(readEls[m.name][g[0]].value) || 0; });
-          m.edit(v);
-        });
-      }
-    });
-    $('readout').appendChild(tr);
-  });
-
   function lchOf(lab) {
     var c = cielab2cielch(lab);
     return {L: c.L, C: c.C, H: ((c.H % 360) + 360) % 360};
@@ -534,10 +522,6 @@
   // Write the state into every control except the one being typed in.
   function sync() {
     var c = state.rgb, hex = toHex(c);
-    ['R', 'G', 'B'].forEach(function (ch) {
-      if (document.activeElement !== rgbEls[ch].num) { rgbEls[ch].num.value = c[ch]; }
-      rgbEls[ch].slider.value = c[ch];
-    });
     if (document.activeElement !== hexEl) { hexEl.value = hex; }
     $('swatch').style.background = hex;
     $('gamutNote').hidden = !state.clipped;
@@ -547,13 +531,16 @@
     $('opacity').value = state.opacity;
     CUTS.forEach(function (cut) { toggleEls[cut.id].checked = !!state.show[cut.id]; });
 
-    var vals = {'XYZ': rgb2xyz(c.R, c.G, c.B), 'HSL': state.hsl, 'L*a*b*': state.lab, 'L*C*h°': lchOf(state.lab)};
-    MODELS.forEach(function (m) {
-      m.fields.forEach(function (f) {
-        var inp = readEls[m.name][f[0]];
-        if (document.activeElement !== inp) { inp.value = vals[m.name][f[0]].toFixed(f[2]); }
-      });
-    });
+    // The numbers, read only, in one line under the swatch.
+    var x = rgb2xyz(c.R, c.G, c.B), h = state.hsl, l = state.lab, lc = lchOf(l);
+    function row(name, vals) { return '<span><b>' + name + '</b> ' + vals.join(' ') + '</span>'; }
+    $('readline').innerHTML = [
+      row('RGB', [c.R, c.G, c.B]),
+      row('HSL', [fmt(h.H, 3), fmt(h.S, 3), fmt(h.L, 3)]),
+      row('L*a*b*', [fmt(l.L, 1), fmt(l.a, 1), fmt(l.b, 1)]),
+      row('L*C*h°', [fmt(lc.L, 1), fmt(lc.C, 1), fmt(lc.H, 1) + '°']),
+      row('XYZ', [fmt(x.X, 1), fmt(x.Y, 1), fmt(x.Z, 1)])
+    ].join('');
   }
 
   // --------------------------------------------------------------------------
@@ -652,7 +639,7 @@
     var q = new URLSearchParams(location.search);
     if (q.get('ref') && tristimulus[q.get('ref')]) { state.ref = q.get('ref'); }
     if (q.get('gamut') === '0') { state.gamut = false; }
-    if (q.get('v') === 'lab') { state.view = 'lab'; }
+    if (q.get('v') === 'lab' || q.get('v') === 'rgb') { state.view = q.get('v'); }
     if (q.get('k')) {
       state.show = {};
       q.get('k').split('.').forEach(function (id) {
