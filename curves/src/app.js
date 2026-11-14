@@ -310,13 +310,17 @@ function rebuild(curve) {
   var colors = new Array(CURVE_SAMPLES + 1);
   var points = new Array(CURVE_SAMPLES + 1);
   var inSel  = new Array(CURVE_SAMPLES + 1);
+  var labPts = new Array(CURVE_SAMPLES + 1);
   for (var k = 0; k <= CURVE_SAMPLES; k++) {
     var t = -1 + 2 * (k / CURVE_SAMPLES);
     colors[k] = toHex(hsl2rgb(curve(t)));
     points[k] = point(t);
+    labPts[k] = labOfCurve(curve, t);
     inSel[k]  = (t >= P.ta && t <= P.tb);
   }
   model.point = point;
+  model.curve = curve;
+  model.labPoints = labPts;
 
   model.full = full;
   model.clip = clip;
@@ -433,6 +437,14 @@ function drawGradient() {
 
 // --- 3-D view (projection lives in scene.js) --------------------------------
 
+// A curve point carried into CIE L*a*b*: the curve's HSL color, converted
+// without rounding (HSL colors are all inside sRGB), placed at a*/110, b*/110,
+// L*/50 - 1 like the color-models instrument's gamut solid.
+function labOfCurve(curve, t) {
+  var c = hsl2rgbF(curve(t));
+  return labPoint(c.R, c.G, c.B, D65);
+}
+
 // `opts.clear` forces the wipe that the "Keep previous curves" checkbox
 // otherwise suppresses; it is what the Clear button uses.
 function drawCurve(opts) {
@@ -440,7 +452,9 @@ function drawCurve(opts) {
   // The default frame fits the unit sphere. The cylinder's rims project up to
   // sqrt(2) from the center (cos ph + sin ph at ph = 1/8 turn), so showing it
   // zooms out by that factor — a fixed scale, so dragging never makes it pulse.
-  var s = (CURVE_W / 2) * (P.showCylinder ? 0.875 / Math.SQRT2 : 0.875);
+  // L*a*b* points reach past the unit sphere (blue sits near b* = -108 at
+  // L* = 32), so that space always uses the zoomed-out frame.
+  var s = (CURVE_W / 2) * ((P.showCylinder || P.space === 'lab') ? 0.875 / Math.SQRT2 : 0.875);
   ctxC.setTransform(s, 0, 0, -s, CURVE_W / 2, CURVE_W / 2);
   if (cleared) { ctxC.clearRect(-2, -2, 4, 4); }
 
@@ -449,9 +463,12 @@ function drawCurve(opts) {
   // Behind the curve, so it never covers a color. Only on a fresh canvas:
   // with "Keep previous curves" on, its translucent lines would otherwise
   // pile up and brighten on every redraw.
-  if (P.showCylinder && cleared) { drawCylinder(ctxC, basis); }
+  var lab = (P.space === 'lab');
+  if (P.showCylinder && cleared) {
+    if (lab) { drawLabGamut(ctxC, basis); } else { drawCylinder(ctxC, basis); }
+  }
 
-  strokeCurve(ctxC, projectAll(model.points, basis), model.colors, function (k) {
+  strokeCurve(ctxC, projectAll(lab ? model.labPoints : model.points, basis), model.colors, function (k) {
     return model.inSel[k] ? 0.022 : 0.008;
   });
 
@@ -459,7 +476,7 @@ function drawCurve(opts) {
   // the same map as the polyline, so the dots sit exactly on it.
   if (P.showPoints) {
     model.palette.swatches.forEach(function (s) {
-      drawDot(ctxC, model.point(s.t), basis,
+      drawDot(ctxC, lab ? labOfCurve(model.curve, s.t) : model.point(s.t), basis,
               {r: 0.018, fill: s.hex, stroke: '#FFFFFF', width: 0.006});
     });
   }

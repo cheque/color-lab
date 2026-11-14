@@ -24,7 +24,7 @@
 
   <main>
     <section class="intro">
-      <h1>Color is <em>space</em>: let’s travel through</h1>
+      <h1>Color is <em>space</em>: let’s journey through</h1>
       <p>Every color is a point in a solid: the HSL cylinder, the perceptual L*a*b* space, the RGB cube.
         A gradient is a path through it, a palette is a handful of stops along the way, and a harmony is a shape.
         These instruments draw those shapes and give back the colors.</p>
@@ -34,23 +34,12 @@
       <h2 id="instruments">The math of it</h2>
       <ul class="apps">
         <li>
-          <a class="app" href="curves/index.html">
-            <canvas data-paint="curves" aria-hidden="true"></canvas>
-            <span class="app-text">
-              <span class="app-name">Parametric curves <span class="tag">HSL cylinder</span></span>
-              <span class="app-blurb">A spring winding through the cylinder: its gradient, the stretch you keep, and a
-                palette spaced evenly to the eye. With the palette-picker widget.</span>
-            </span>
-          </a>
-          <a class="app-extra" href="curves/widget.html">widget →</a>
-        </li>
-        <li>
           <a class="app" href="theory/index.html">
             <canvas data-paint="theory" aria-hidden="true"></canvas>
             <span class="app-text">
               <span class="app-name">Color models <span class="tag">sRGB · XYZ · L*a*b* · HSL</span></span>
-              <span class="app-blurb">One color seen in every model at once: the HSL disc and the a*b* plane, the
-                reference white, the sRGB gamut, and a palette you collect as you go.</span>
+              <span class="app-blurb">One color seen in every model at once: nine plane cuts through RGB, HSL and L*a*b*, the
+                sRGB gamut as a solid, and a palette you collect as you go.</span>
             </span>
           </a>
         </li>
@@ -63,6 +52,17 @@
                 and how they change from the painter's wheel to the perceptual one.</span>
             </span>
           </a>
+        </li>
+        <li>
+          <a class="app" href="curves/index.html">
+            <canvas data-paint="curves" aria-hidden="true"></canvas>
+            <span class="app-text">
+              <span class="app-name">Parametric curves <span class="tag">HSL cylinder · L*a*b*</span></span>
+              <span class="app-blurb">A spring winding through the cylinder: its gradient, the stretch you keep, and a
+                palette spaced evenly to the eye. With the palette-picker widget.</span>
+            </span>
+          </a>
+          <a class="app-extra" href="curves/widget.html">widget →</a>
         </li>
       </ul>
     </section>
@@ -114,6 +114,7 @@
   <script src="lib/color.js"></script>
   <script src="lib/scene.js"></script>
   <script src="curves/src/curve.js"></script>
+  <script src="theory/src/solids.js"></script>
   <script src="src/home.js"></script>
 </body>
 

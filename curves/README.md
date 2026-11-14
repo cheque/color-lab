@@ -66,7 +66,7 @@ Three things turn the curve into a set of colors you can use:
 
 **[cheque.github.io/color-curves](https://cheque.github.io/color-curves/)**
 
-The full instrument. Four bands show the pipeline end to end — the whole curve, the clipped interval, the same interval after perceptual respacing, and the palette itself — with lines tying each stage to the next, so what the re-parameterization actually did is visible rather than asserted. Beside them, the curve is drawn inside the color cylinder in 3-D; drag to rotate it.
+The full instrument. Four bands show the pipeline end to end — the whole curve, the clipped interval, the same interval after perceptual respacing, and the palette itself — with lines tying each stage to the next, so what the re-parameterization actually did is visible rather than asserted. Beside them, the curve is drawn inside the color cylinder in 3-D, or carried into CIE L\*a\*b\*, where the same colors bend to show how unevenly HSL spaces them to the eye; drag to rotate it.
 
 | control                |                                             | range                   |
 | ---------------------- | ------------------------------------------- | ----------------------- |
@@ -81,6 +81,8 @@ The full instrument. Four bands show the pipeline end to end — the whole curve
 | **colors** `n`        | palette size                                | 2 … 50                  |
 | **perceptual spacing** | equal steps to the eye                      | on / off                |
 | **metric**             | color-difference formula                   | CIEDE2000 · ΔE94 · ΔE76 |
+| **3-D space**          | where the curve is drawn: as defined, or carried by the color conversion into L\*a\*b\* (D65) | HSL cylinder · CIE L\*a\*b\* |
+| **show the solid**     | wireframe behind the curve: the cylinder, or the sRGB gamut in L\*a\*b\* | on / off |
 
 Every setting lives in the URL, so any palette you find is a link you can keep or send.
 

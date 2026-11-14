@@ -129,11 +129,24 @@ var PARAM_SPECS = [
           'up on top of each other. The Clear button empties it.'
   },
   {
-    key: 'showCylinder', group: 'View', label: 'Show the cylinder', type: 'check', def: false,
+    key: 'space', group: 'View', label: '3-D space', type: 'select', def: 'hsl',
     view: true,
-    help: 'Draw the HSL cylinder as a wireframe behind the curve: the black and ' +
+    options: function () {
+      return [{value: 'hsl', label: 'HSL cylinder'}, {value: 'lab', label: 'CIE L*a*b* (sRGB gamut)'}];
+    },
+    help: 'Where the curve is drawn. HSL: the curve as defined, a spring in the ' +
+          'cylinder. L*a*b*: every point of the curve carried by the color ' +
+          'conversion (HSL to sRGB to XYZ to L*a*b*, D65 white) into the ' +
+          'perceptual space, at a*/110, b*/110 and L*/50 - 1. The colors are the ' +
+          'same; the shape shows how unevenly HSL spaces them to the eye.'
+  },
+  {
+    key: 'showCylinder', group: 'View', label: 'Show the solid', type: 'check', def: false,
+    view: true,
+    help: 'Draw the solid as a wireframe behind the curve. HSL: the black and ' +
           'white rims, the L = 0.5 equator, twelve lines of constant hue and the ' +
-          'lightness axis. Lines on the far side are fainter.'
+          'lightness axis. L*a*b*: the faces of the RGB cube carried into L*a*b*, ' +
+          'the sRGB gamut, with the L* axis. Lines on the far side are fainter.'
   },
 
   // --- export --------------------------------------------------------------

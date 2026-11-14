@@ -16,7 +16,7 @@ These instruments draw those shapes and give back the colors.
 
 | | instrument | |
 |---|---|---|
-| 0 | [**Parametric curves**](https://cheque.github.io/color-lab/curves/) · [widget](https://cheque.github.io/color-lab/curves/widget.html) | A curve through the HSL cylinder, its gradient, and a palette spaced evenly to the eye ([Bridges 2023](https://archive.bridgesmathart.org/2023/bridges2023-181.html)). Details in [`curves/README.md`](curves/README.md). |
+| 0 | [**Parametric curves**](https://cheque.github.io/color-lab/curves/) · [widget](https://cheque.github.io/color-lab/curves/widget.html) | A curve through the HSL cylinder (and its image in L\*a\*b\*), its gradient, and a palette spaced evenly to the eye ([Bridges 2023](https://archive.bridgesmathart.org/2023/bridges2023-181.html)). Details in [`curves/README.md`](curves/README.md). |
 | 1 | [**Color models**](https://cheque.github.io/color-lab/theory/) | One color in RGB, HSL and CIE L\*a\*b\* at once: nine plane cuts to drag in (RGB at constant R, G, B; HSL at constant L, H, S; L\*a\*b\* at constant L\*, a\*, b\*); the RGB cube, the HSL cylinder or the sRGB gamut in 3-D, translucent, with each space's cuts flat and the others' carried over, curved; a palette you collect. |
 | 5 | Harmony (in the workshop) | Classic schemes (complements, triads, analogous…) as shapes on a hue wheel of your choice, carried into the solids, with Itten's contrasts measured. [Literature review](docs/literature-review-color-harmony.md) · [specification](docs/spec-color-harmony.md) |
 

@@ -6,7 +6,7 @@
 //  not screenshots. The three workshop cards preview what their instrument
 //  will compute, with the same mathematics at miniature scale.
 //
-//  Requires: lib/color.js, lib/scene.js, curves/src/curve.js
+//  Requires: lib/color.js, lib/scene.js, curves/src/curve.js, theory/src/solids.js
 // ============================================================================
 
 (function () {
@@ -79,8 +79,8 @@
   //  1 · Color models: the HSL disc beside the a*b* plane, gamut-clipped
   // --------------------------------------------------------------------------
   function paintTheory(g) {
-    var side = Math.min(g.w * 0.42, g.h * 0.78);
-    var gap = (g.w - 2 * side) / 3;
+    var side = Math.min(g.w * 0.36, g.h * 0.7);
+    var gap = (g.w - 2 * side) / 3.6;          // the disc a little left, the solid more room
     var y0 = (g.h - side) / 2;
 
     pixels(g, gap, y0, side, side, function (u, v) {
@@ -90,15 +90,19 @@
       return hsl2rgb({H: H - Math.floor(H), S: r, L: 0.5});
     });
 
-    pixels(g, 2 * gap + side, y0, side, side, function (u, v) {
-      var c = cielab2rgbF({L: 62, a: 110 * u, b: 110 * v}, D65);
-      return inGamut(c) ? rgbClip(c) : null;
-    });
+    // The L*a*b* solid: the sRGB gamut, opaque, drawn by the color-models
+    // instrument's own painter (theory/src/solids.js) on a canvas of its own.
+    var F = 1.7, box = side * F;               // the solid's frame, larger than the disc's
+    var off = document.createElement('canvas');
+    off.width = Math.round(box * g.dpr); off.height = Math.round(box * g.dpr);
+    var camera = {th: 0.1, ph: 0.06, zoom: 1.1, panX: 0, panY: 0};
+    Solids.drawPainter(off, camera, {cuts: [], solid: Solids.solidLab(D65), opacity: 1, wire: []}, g.dpr);
+    g.ctx.drawImage(off, 2.45 * gap + side + side / 2 - box / 2, y0 + side / 2 - box / 2, box, box);
 
-    // The same color marked in both: where one model puts it, the other does.
-    var mark = {R: 214, G: 64, B: 120};
+    // One color marked on the disc's rim and on the solid's skin: full HSL
+    // saturation puts it on a face of the RGB cube, hence on the gamut's surface.
+    var mark = {R: 214, G: 30, B: 120};
     var hsl = rgb2hsl(mark.R, mark.G, mark.B);
-    var lab = rgb2cielab(mark.R, mark.G, mark.B, D65);
     var r = side / 2;
     var ctx = g.ctx;
     function dot(x, y) {
@@ -108,7 +112,9 @@
     }
     dot(gap + r + r * hsl.S * Math.cos(2 * Math.PI * hsl.H),
         y0 + r - r * hsl.S * Math.sin(2 * Math.PI * hsl.H));
-    dot(2 * gap + side + r + r * lab.a / 110, y0 + r - r * lab.b / 110);
+    var basis = cameraBasis(camera), q = project(Solids.posLab(rgb2cielab(mark.R, mark.G, mark.B, D65)), basis);
+    var S = (box / 2) * (0.875 / Math.SQRT2) * camera.zoom;
+    dot(2.45 * gap + side + r + S * q.x, y0 + r - S * q.y);
   }
 
   // --------------------------------------------------------------------------
