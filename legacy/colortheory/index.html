@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+  <title>Color Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="container"  style="background: #777; visibility: visible;">
+  <div>
+    <h1>sRGB</h1>
+    <input type="number" class="num" value=0 step=1 min=0 max=255 id="sRnum" oninput="sR=+value;update();" onchange="sR=+value;update();"/>
+    <input type="range" min="0" max="255" value="0" class="slider" oninput="sR=+value;update();" onchange="sR=+value;update();" id="sRslide">
+    <br/>
+    <input type="number" class="num" value=0 step=1 min=0 max=255 id="sGnum" oninput="sG=value;update();" onchange="sG=value;update();"/>
+    <input type="range" min="0" max="255" value="0" class="slider" oninput="sG=value;update();" onchange="sG=value;update();" id="sGslide">
+    <br/>
+    <input type="number" class="num" value=0 step=1 min=0 max=255 id="sBnum" oninput="sB=value;update();" onchange="sB=value;update();"/>
+    <input type="range" min="0" max="255" value="0" class="slider" oninput="sB=value;update();" onchange="sB=value;update();" id="sBslide">
+  </div>
+  <div>
+    <h1>Hex code</h1>
+      <input type="text" value="#000000" id="HexCode" oninput="update();" onchange="update();" onkeydown="return false;" style="text-align:center;"/>
+    <div id="showcolor">
+    </div>
+  </div>
+  <div style="width:100%; margin-bottom: 35px;">
+    <div style="position:relative; width:375px; height:300px;">
+      <canvas id="controlcanvas" style="z-index: 7; position:absolute; top:0; left:0;"></canvas>
+      <canvas id="hslcanvas" style="z-index: 0; position:absolute; top:0; left:0;"></canvas>
+      <canvas id="Lhslbar" style="z-index: 0; margin-left:25px; position:absolute; top:0; right:0;"></canvas>
+    </div>
+    <br/>
+    (H,S) disc, constant L  +  L profile
+  </div>
+  <div style="padding-bottom:25px; text-align:center;">
+    <button type="button" onclick="insertColor();">Sample selected color</button>
+  </div>
+</div>
+
+<div class="container" style="visibility: visible;">
+  <div>
+    <h3>Tristimulus reference <br/>(10°, CIE 1964)</h3>
+    <select id="tri_ref" onchange="update();">
+      <option value=A>Incandescent/tungsten</option>
+      <option value=B>Old direct sunlight at noon</option>
+      <option value=C>Old daylight</option>
+      <option value=D50>ICC profile PCS</option>
+      <option value=D55>Mid-morning daylight</option>
+      <option value=D65 selected>Daylight, sRGB, Adobe-RGB</option>
+      <option value=D75>North sky daylight</option>
+      <option value=E>Equal energy</option>
+      <option value=F1>Daylight Fluorescent</option>
+      <option value=F2>Cool fluorescent</option>
+      <option value=F3>White Fluorescent</option>
+      <option value=F4>Warm White Fluorescent</option>
+      <option value=F5>Daylight Fluorescent</option>
+      <option value=F6>Lite White Fluorescent</option>
+      <option value=F7>Daylight fluorescent, D65 simulator</option>
+      <option value=F8>Sylvania F40, D50 simulator</option>
+      <option value=F9>Cool White Fluorescent</option>
+      <option value=F10>Ultralume 50, Philips TL85</option>
+      <option value=F11>Ultralume 40, Philips TL84</option>
+      <option value=F12>Ultralume 30, Philips TL83</option>
+    </select>
+  </div>
+  <div style="height: 0; visibility: hidden;">
+    <h1>XYZ</h1>
+    X: <input type="text" class="float" value=0 id="X" onkeydown="return false;"/>
+    Y: <input type="text" class="float" value=0 id="Y" onkeydown="return false;"/>
+    Z: <input type="text" class="float" value=0 id="Z" onkeydown="return false;"/>
+  </div>
+  <div>
+    <h1>CIE-L*a*b*</h1>
+    L*: <input type="text" class="float" value=0 id="cie-L" onkeydown="return false;"/>
+    a: <input type="text" class="float" value=0 id="cie-a" onkeydown="return false;"/>
+    b: <input type="text" class="float" value=0 id="cie-b" onkeydown="return false;"/>
+  </div>
+  <div style="height: 0; visibility: hidden;">
+    <h1>CIE-L*CH°</h1>
+    L*: <input type="text" class="float" value=0 id="lch-L" onkeydown="return false;"/>
+    C: <input type="text" class="float" value=0 id="lch-C" onkeydown="return false;"/>
+    H: <input type="text" class="float" value=0 id="lch-H" onkeydown="return false;"/>
+  </div>
+  <div>
+    <h1>HSL</h1>
+    H: <input type="text" class="float" value=0 id="hsl-H" onkeydown="return false;"/>
+    S: <input type="text" class="float" value=0 id="hsl-S" onkeydown="return false;"/>
+    L: <input type="text" class="float" value=0 id="hsl-L" onkeydown="return false;"/>
+  </div>
+  <div style="width:100%; margin-top: 35px;">
+    <canvas id="thecanvas" style="z-index: 0;">
+    </canvas><canvas id="Lbar" style="z-index: 0; margin-left:25px;"></canvas>
+    <br/>
+    (a*,b*) plane, constant L*  +  L* profile <br/>
+    <input type="checkbox" id="gamut" onchange="reDraw_cielab();"/> Restrict domain to sRGB gamut
+  </div>
+</div>
+
+<div id="footer">
+  <a href="http://chequesoto.info" target="_blank">chequesoto.info</a>
+  <!-- Reference for color spaces: <a href="http://www.easyrgb.com/en/math.php" target="_blank">http://www.easyrgb.com/en/math.php</a> -->
+</div>
+
+</body>
+
+<script src="colors.js"></script>
+<script src="main.js"></script>
+<script src="palette.js"></script>
+<script src="curves.js"></script>
+
+</html>
