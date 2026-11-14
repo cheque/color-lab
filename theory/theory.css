@@ -1,53 +1,42 @@
 /* theory.css — layout of the color-model explorer. Tokens and controls come from lib/applet.css
    (color-curves' stylesheet), so this file only places things. The three panels (numbers, cuts, solid)
-   sit as one centered block; the palette runs full width beneath them. */
+   sit as one centered block (the title heads the solid column); the palette runs full width beneath them. */
 
 .layout { max-width: 1500px; margin: 0 auto; }
 .panel-cuts     { flex: 0 0 auto; width: 664px; }
 
-/* title row */
-.theory-head { display: flex; align-items: baseline; justify-content: center; gap: 18px; margin: 0 0 14px; }
-.theory-head h2 { margin: 0; font-size: 24px; }
+/* title, over the solid column only */
+.theory-head { margin: 0 0 12px; text-align: center; }
+.theory-head h2 { margin: 0 0 4px; font-size: 24px; }
 .theory-head .links { margin: 0; }
 .panel-solid    { width: 630px; flex: 0 0 auto; }
 
 .caption.left { text-align: left; }
 .caption.warn { color: #ffd166; margin: 4px 0 0; text-align: left; }
 
-/* under the cuts: the color, the reference white, the actions */
-.current-bar {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; align-items: start;
-  border-top: 1px solid var(--line); padding-top: 14px; margin-top: 6px;
-}
-.current-bar .current { grid-column: 1 / -1; }
-.current-bar .actions { justify-content: flex-start; margin: 0; align-self: end; }
-.current { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-.big-swatch { flex: 0 0 96px; height: 64px; border: 3px solid #fff; border-radius: 8px; }
-.current-side { flex: 0 0 160px; }
-.readline {
-  flex: 1 1 300px; margin: 0; display: flex; flex-wrap: wrap; gap: 2px 16px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; color: var(--muted);
-}
-.readline b { color: var(--ink); font-weight: 600; font-family: system-ui, sans-serif; }
-.reference .row > label { flex: 0 0 auto; }
+/* under the cuts: the color and its coordinates, then the actions */
+.current-bar { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 6px; }
+.current { display: flex; gap: 24px; align-items: flex-start; justify-content: center; }
+.current-side { flex: 0 0 150px; display: flex; flex-direction: column; gap: 8px; }
+.big-swatch { height: 96px; border: 3px solid #fff; border-radius: 8px; }
 .hex {
-  width: 100%;
+  width: 100%; box-sizing: border-box;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 18px; text-transform: uppercase; text-align: center; padding: 6px;
 }
 .hex.bad { border-color: #ff6b6b; }
-
-/* readout table: one row per model, three editable numbers each */
-.readout { width: 100%; border-collapse: collapse; font-size: 12px; }
-.readout th { text-align: left; font-weight: 400; color: var(--muted); padding: 4px 6px 4px 0; white-space: nowrap; width: 58px; }
-.readout td { padding: 2px; }
-.readout td span { display: block; font-size: 10px; color: var(--muted); }
-.readout input {
-  width: 100%;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px; text-align: right;
+.coords { border-collapse: collapse; font-size: 13px; }
+.coords th { text-align: left; font-weight: 600; color: var(--ink); padding: 3px 14px 3px 0; white-space: nowrap; }
+.coords td {
+  text-align: right; padding: 3px 0 3px 18px; min-width: 64px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--ink);
 }
-.readout input[readonly] { background: transparent; border-color: transparent; color: var(--muted); }
+.coords td span { color: var(--muted); font-size: 11px; margin-right: 6px; float: left; }
+.current-bar .actions { justify-content: center; margin: 16px 0 0; flex-wrap: nowrap; }
+
+/* below the Solid box: the reference white */
+.reference { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 10px; }
+.panel-solid .reference .row > label { flex: 0 0 auto; }
 
 /* the six cuts: one column per model, three cuts each */
 .cut-cols { display: flex; gap: 32px; align-items: flex-start; justify-content: center; }
@@ -99,7 +88,7 @@
 
 @media (max-width: 900px) {
   .panel-cuts, .panel-solid { width: 100%; }
-  .current-bar { grid-template-columns: 1fr; }
+  .current { flex-wrap: wrap; }
   .solid-stack { width: 100%; height: auto; aspect-ratio: 1; }
   .cut-cols { width: 100%; }
   .cut-col { flex: 1 1 0; min-width: 0; }

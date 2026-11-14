@@ -64,7 +64,10 @@ var Solids = (function () {
     if (smp.rgb) { return smp.rgb; }
     if (smp.hsl) { return hsl2rgbF(smp.hsl); }
     var c = cielab2rgbF(smp.lab, ref);
-    return inGamut(c, 0.5) ? c : null;
+    if (!inGamut(c, 0.5)) { return null; }
+    // Clamp the tolerance away: near white and black, HSL saturation divides by
+    // 2 - max - min (or max + min), so a hair past 255 or 0 sends S far past 1.
+    return {R: clip(c.R, 0, 255), G: clip(c.G, 0, 255), B: clip(c.B, 0, 255)};
   }
 
   // ---- meshes: lists of quads with a color per corner ----------------------

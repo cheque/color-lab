@@ -531,15 +531,19 @@
     $('opacity').value = state.opacity;
     CUTS.forEach(function (cut) { toggleEls[cut.id].checked = !!state.show[cut.id]; });
 
-    // The numbers, read only, in one line under the swatch.
+    // The coordinates, read only, one row per model beside the swatch.
     var x = rgb2xyz(c.R, c.G, c.B), h = state.hsl, l = state.lab, lc = lchOf(l);
-    function row(name, vals) { return '<span><b>' + name + '</b> ' + vals.join(' ') + '</span>'; }
-    $('readline').innerHTML = [
-      row('RGB', [c.R, c.G, c.B]),
-      row('HSL', [fmt(h.H, 3), fmt(h.S, 3), fmt(h.L, 3)]),
-      row('L*a*b*', [fmt(l.L, 1), fmt(l.a, 1), fmt(l.b, 1)]),
-      row('L*C*h°', [fmt(lc.L, 1), fmt(lc.C, 1), fmt(lc.H, 1) + '°']),
-      row('XYZ', [fmt(x.X, 1), fmt(x.Y, 1), fmt(x.Z, 1)])
+    function row(name, names, vals) {
+      return '<tr><th>' + name + '</th>' + vals.map(function (v, i) {
+        return '<td><span>' + names[i] + '</span>' + v + '</td>';
+      }).join('') + '</tr>';
+    }
+    $('coords').innerHTML = [
+      row('RGB', ['R', 'G', 'B'], [c.R, c.G, c.B]),
+      row('HSL', ['H', 'S', 'L'], [fmt(h.H, 3), fmt(h.S, 3), fmt(h.L, 3)]),
+      row('L*a*b*', ['L*', 'a*', 'b*'], [fmt(l.L, 1), fmt(l.a, 1), fmt(l.b, 1)]),
+      row('L*C*h°', ['L*', 'C*', 'h°'], [fmt(lc.L, 1), fmt(lc.C, 1), fmt(lc.H, 1)]),
+      row('XYZ', ['X', 'Y', 'Z'], [fmt(x.X, 1), fmt(x.Y, 1), fmt(x.Z, 1)])
     ].join('');
   }
 
